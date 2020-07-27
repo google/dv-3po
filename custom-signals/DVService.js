@@ -17,13 +17,6 @@ Note that these code samples being shared are not official Google
 products and are not formally supported.
 ************************************************************************/
 
-/**************
-* Taken from the Oauth2 example:
-*
-* https://github.com/googlesamples/apps-script-oauth2
-*
-*/
-
 /**
 * Handle the call back from the Oauth2 service provider. This is a part
 * of the Oauth2 work flow.
@@ -53,6 +46,8 @@ function authCallback_(service, request) {
 
 var DVService = function() {
 
+  var configs = new Configs();
+
   /**
   * Clear any tokens stored for the oauth2 service.
   */
@@ -81,8 +76,8 @@ var DVService = function() {
       .setTokenUrl('https://accounts.google.com/o/oauth2/token')
 
       // Set the client ID and secret, from the Google Developers Console.
-      .setClientId(CLIENT_ID)
-      .setClientSecret(CLIENT_SECRET)
+      .setClientId(configs.getClientID())
+      .setClientSecret(configs.getClientSecret())
 
       // Set the name of the callback function in the script referenced
       // above that should be invoked to complete the OAuth flow.
@@ -104,7 +99,8 @@ var DVService = function() {
 
       // Forces the approval prompt every time. This is useful for testing,
       // but not desirable in a production application.
-            .setParam('approval_prompt', 'force');
+      //.setParam('approval_prompt', 'force')
+      ;
   }
 
  /**
@@ -113,7 +109,7 @@ var DVService = function() {
   */
   this.getDVService = function() {
     return getService('dv',
-                      'https://www.googleapis.com/auth/doubleclickbidmanager https://www.googleapis.com/auth/devstorage.read_write',
+                      'https://www.googleapis.com/auth/display-video https://www.googleapis.com/auth/devstorage.read_write',
                       'authCallbackDV');
   }
 
