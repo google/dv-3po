@@ -1,0 +1,62 @@
+<script>
+/*
+ * Copyright 2019 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *     Unless required by applicable law or agreed to in writing, software
+ *     distributed under the License is distributed on an "AS IS" BASIS,
+ *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *     See the License for the specific language governing permissions and
+ *     limitations under the License.
+ */
+
+/**
+ * Controller functions for the sidebar UI
+ */
+
+/**
+ * Sets a message to the status field in the sidebar
+ */
+function setStatus(status) {
+  console.log('problem?');
+  console.log(status);
+  document.getElementById('status').innerHTML = status;
+}
+
+/**
+ * Loads data from DV360 into the sheet
+ */
+function loadFromDV() {
+  setStatus('Running');
+
+  // Clear the Log tab
+  getLogger().clear().then(function(result) {
+    // Create jobs to be executed
+    var jobs = [
+      {
+        'entity': 'InsertionOrder'
+      },{
+        'entity': 'LineItem'
+      }
+    ];
+
+    // Run jobs
+    return new Runner().run('identifyItemsToLoad', jobs);
+  }).then(function(loadJobs) {
+    return new Runner().run('generateQAReport', [{jobs: loadJobs}]);
+  }).then(function(result) {
+    // Log results
+    console.log(result);
+    return getLogger().log(result)
+  }).then(function(result) {
+    // Change status back to Ready
+    setStatus('Ready');
+  });
+}
+
+</script>
