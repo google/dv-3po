@@ -56,3 +56,15 @@ var FixedBidFieldHandler = function(DVDAO) {
   }
 }
 FixedBidFieldHandler.prototype = Object.create(BaseFieldHandler.prototype);
+
+var LIPacingCapFieldHandler = function(DVDAO) {
+  BaseFieldHandler.call(this);
+
+  this.handle = function(feedItem, lineItem, updateMask) {
+    if (feedItem['Daily Max $'] !== '') {
+      lineItem.pacing.dailyMaxMicros = feedItem['Daily Max $'] * 1000000;
+      updateMask.push('pacing.dailyMaxMicros');
+    }
+  }
+}
+LIPacingCapFieldHandler.prototype = Object.create(BaseFieldHandler.prototype);

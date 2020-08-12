@@ -28,7 +28,8 @@ var DVManager = function() {
 
   var fieldHandlers = [
       new ActiveFieldHandler(),
-      new FixedBidFieldHandler()
+      new FixedBidFieldHandler(),
+      new LIPacingCapFieldHandler()
   ];
 
   var sheetDAO = getSheetDAO();

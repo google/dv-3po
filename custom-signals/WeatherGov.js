@@ -155,7 +155,7 @@ var WeatherGov = function(sheetName) {
           'weather.gov';
     }
 
-    sheetDAO.clear('Weather', 'A2:AZ');
-    sheetDAO.dictToSheet('Weather', feed);
+    sheetDAO.clear(sheetName, 'A2:AZ');
+    sheetDAO.dictToSheet(sheetName, feed);
   }
 }

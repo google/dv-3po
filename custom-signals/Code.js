@@ -41,6 +41,7 @@ function run() {
   var activity = sheetDAO.getValues('Status', 'A4:B');
 
   new WeatherGov('Weather').refresh();
+  new OpenWeather('OpenWeather').refresh();
 
   activity = activity.concat(new DVManager().update());
 
