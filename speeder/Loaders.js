@@ -125,6 +125,14 @@ var LineItemLoader = function(dvDAO) {
     while(feedItem = feedProvider.next()) {
       var lineItems = dvDAO.listLineItems(feedItem['Advertiser ID'], feedItem['Insertion Order ID']);
 
+      forEach(lineItems, function(index, lineItem) {
+        var targetingOptions = dvDAO.listTargetingOptions(
+            feedItem['Advertiser ID'], lineItem.lineItemId,
+            'TARGETING_TYPE_KEYWORD');
+
+        lineItem.keywordTargeting = targetingOptions.assignedTargetingOptions;
+      });
+
       job.itemsToLoad = job.itemsToLoad.concat(lineItems);
     }
 

@@ -62,6 +62,23 @@ var QA = function() {
       if(lineItem) {
         feedItem['Line Item ID'] = lineItem.lineItemId;
         feedItem['Line Item Name'] = lineItem.displayName;
+
+        console.log(lineItem);
+        if(lineItem.keywordTargeting) {
+          keywordExclusions = [];
+          keywordInclusions = [];
+
+          forEach(lineItem.keywordTargeting, function(index, keyword) {
+            if(keyword.keywordDetails.negative) {
+              keywordExclusions.push(keyword.keywordDetails.keyword);
+            } else {
+              keywordInclusions.push(keyword.keywordDetails.keyword);
+            }
+          });
+
+          feedItem['Keyword Exclusions'] = keywordExclusions.join(', ');
+          feedItem['Keyword Inclusions'] = keywordInclusions.join(', ');
+        }
       }
 
       result.push(feedItem);

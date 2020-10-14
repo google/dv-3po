@@ -67,60 +67,8 @@ var DVDAO = function() {
     return JSON.parse(response.getContentText());
   }
 
-  /**
-   * Fetches a particular line item
-   *
-   * params:
-   *  advertierId: the advertiser id
-   *  lineItemId: the line item id
-   *
-   * returns:
-   *  Line item object from DV
-   */
   this.getLineItem = function(advertiserId, lineItemId) {
     return apiCall("/advertisers/" + advertiserId + "/lineItems/" + lineItemId);
-  }
-
-  /**
-   * Lists all line items under a specific insertion order
-   *
-   * params:
-   *  advertiserId: Advertiser ID
-   *  insertionOrderId: Insertion order ID
-   *
-   * returns:
-   *  List of line items under the specified insertion order
-   */
-  this.listLineItems = function(advertiserId, insertionOrderId) {
-    var result = [];
-    var apiUrl = "/advertisers/" + advertiserId + "/lineItems?filter=insertionOrderId=" + insertionOrderId;
-    var response = apiCall(apiUrl);
-
-    while(response && response.lineItems && response.lineItems.length > 0) {
-      result = result.concat(response.lineItems);
-
-      if(response.nextPageToken) {
-        response = apiCall(apiUrl + '&pageToken=' + response.nextPageToken);
-      } else {
-        response = {};
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Fetches a particular insertion order
-   *
-   * params:
-   *  advertiserId: The advertiser id under which the desired IO is
-   *  insertionOrderId: Unique identifier of the insertion order
-   *
-   * returns:
-   *  DV360 insertion order
-   */
-  this.getInsertionOrder = function(advertiserId, insertionOrderId) {
-    return apiCall("/advertisers/" + advertiserId + "/insertionOrders/" + insertionOrderId);
   }
 
   this.patchLineItem = function(lineItem, updateMask) {
@@ -131,11 +79,21 @@ var DVDAO = function() {
     });
   }
 
-  /**
-   * Lists targeting options of a specific type of a given line item
-   */
-  this.listTargetingOptions = function(advertiserId, lineItemId, targetingType) {
-    return apiCall("/advertisers/" + advertiserId + "/lineItems/" + lineItemId
-        + "/targetingTypes/" + targetingType + "/assignedTargetingOptions");
+  this.listInsertionOrders = function(advertiserId, filter) {
+    var endpoint = "/advertisers/" + advertiserId + "/insertionOrders/";
+    if(filter) {
+      endpoint += "?filter=" + filter;
+    }
+
+    return apiCall(endpoint);
   }
+}
+
+var dvDAO;
+function getDVDAO() {
+  if(!dvDAO) {
+    dvDAO = new DVDAO();
+  }
+
+  return dvDAO;
 }
