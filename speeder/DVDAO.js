@@ -138,4 +138,36 @@ var DVDAO = function() {
     return apiCall("/advertisers/" + advertiserId + "/lineItems/" + lineItemId
         + "/targetingTypes/" + targetingType + "/assignedTargetingOptions");
   }
+
+  /**
+   * Creates a new targeting option associated with the specified line item
+   *
+   * params:
+   *  advertiserId: Advertiser ID
+   *  lineItemId: Line item ID
+   *  targetingType: String representing the targeting type enum value from the
+   *  API
+   *  targetingOption: Object with the targeting option as specified by the API
+   */
+  this.addTargetingOption = function(advertiserId, lineItemId, targetingType,
+      targetingOption) {
+    return apiCall("/advertisers/" + advertiserId + "/lineItems/" +
+        lineItemId + "/targetingTypes/" + targetingType +
+        "/assignedTargetingOptions", {
+      "method": "post",
+      "payload": JSON.stringify(targetingOption),
+    });
+  }
+}
+
+/**
+ * Singleton implementation for the DV DAO
+ */
+var dao = null;
+function getDVDAO() {
+  if(!dao) {
+    dao = new DVDAO();
+  }
+
+  return dao;
 }

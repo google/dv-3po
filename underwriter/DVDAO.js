@@ -24,21 +24,8 @@
  */
 var DVDAO = function() {
 
-  // Service responsible for authenticating and generating access tokens
-  // to authenticate API calls
-  var service = new DVService().getDVService();
-
   const BASE_API_URL = "https://displayvideo.googleapis.com/v1";
-
-  // Setup the service and perform authentication if needed
-  if(!service.hasAccess()) {
-    var t = HtmlService.createTemplateFromFile('Authorization');
-    t.authorizationURL = service.getAuthorizationUrl();
-    var output = t.evaluate();
-    output.setTitle("Authorization");
-
-    SpreadsheetApp.getUi().showSidebar(output);
-  }
+  const CONTENT_API_URL = "https://displayvideo.googleapis.com/download/";
 
   function apiCall(urlSuffix, options) {
     var url = BASE_API_URL + urlSuffix;
@@ -55,7 +42,7 @@ var DVDAO = function() {
     options.muteHttpExceptions = true;
     // ----
 
-    options.headers['Authorization'] = "Bearer " + service.getAccessToken();
+    options.headers['Authorization'] = "Bearer " + ScriptApp.getOAuthToken();
     options.headers['Content-Type'] = "application/json";
 
     var response = UrlFetchApp.fetch(url, options);
@@ -71,22 +58,75 @@ var DVDAO = function() {
     return apiCall("/advertisers/" + advertiserId + "/lineItems/" + lineItemId);
   }
 
-  this.patchLineItem = function(lineItem, updateMask) {
-    return apiCall("/advertisers/" + lineItem.advertiserId + "/lineItems/" +
-        lineItem.lineItemId + "?updateMask=" + updateMask, {
-      "method": "patch",
-      "payload": JSON.stringify(lineItem),
-    });
-  }
-
-  this.listInsertionOrders = function(advertiserId, filter) {
+  this.listInsertionOrders = function(advertiserId, filter, pageToken) {
     var endpoint = "/advertisers/" + advertiserId + "/insertionOrders/";
+    var separator = "?";
+
     if(filter) {
-      endpoint += "?filter=" + filter;
+      endpoint += separator + "filter=" + filter;
+
+      separator = '&';
+    }
+
+    if(pageToken) {
+      endpoint += separator + 'pageToken=' + pageToken;
     }
 
     return apiCall(endpoint);
   }
+
+  this.createSDFDownloadTask = function(advertiserId, idFilter) {
+    var endpoint = "/sdfdownloadtasks/";
+
+    return apiCall(endpoint, {
+      "method": "post",
+      "payload": JSON.stringify(
+        {
+          "version": "SDF_VERSION_5_2",
+          "advertiserId": advertiserId,
+          "idFilter": idFilter
+        }
+      )
+    });
+  }
+
+  this.getSDFDownloadTask = function(task) {
+    var endpoint = "/" + task.name;
+
+    return apiCall(endpoint);
+  }
+
+  this.downloadSDF = function(task) {
+    //var endpoint = "/" + task.response.resourceName;
+    var endpoint = task.response.resourceName + "?alt=media";
+
+    var url =  CONTENT_API_URL + endpoint;
+
+    var options = {
+      'headers': {
+        'accept': 'application/zip'
+      }
+    };
+
+    // For testing only
+    options.muteHttpExceptions = true;
+    // ----
+
+    options.headers['Authorization'] = "Bearer " + ScriptApp.getOAuthToken();
+
+    var response = UrlFetchApp.fetch(url, options);
+
+    if(response.getResponseCode() != 200) {
+      throw "Error fetching report " + response.getContentText();
+    }
+
+    var content = response.getBlob();
+
+    content.setContentType('application/zip');
+
+    return Utilities.unzip(content);
+  }
+
 }
 
 var dvDAO;

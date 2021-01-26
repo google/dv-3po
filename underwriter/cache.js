@@ -19,13 +19,48 @@
 *
 ***************************************************************************/
 
-function each(list, handler) {
-  if(!list) {
-    return;
+/**
+ * Object cache
+ */
+var Cache = function() {
+
+  // Holds cache keys and values
+  var cache = {};
+
+  /**
+   * Gets and item from the cache by key, if key not found returns null
+   *
+   * params:
+   *  key: Unique cache key
+   *
+   * returns: Object identified by the key
+   */
+  this.get = function(key) {
+    if(cache[key]) {
+      return cache[key];
+    }
+
+    return null;
   }
 
-  for(var i = 0; i < list.length; i++) {
-    handler(list[i], i);
+  /**
+   * Sets a value to the cache
+   *
+   * params:
+   *  key: unique identifier for the cache
+   *  value: value to be set
+   */
+  this.set = function(key, value) {
+    cache[key] = value;
   }
 }
 
+var cache = null;
+
+function getCache() {
+  if(!cache) {
+    cache = new Cache();
+  }
+
+  return cache;
+}

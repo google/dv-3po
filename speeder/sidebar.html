@@ -23,7 +23,6 @@
  * Sets a message to the status field in the sidebar
  */
 function setStatus(status) {
-  console.log('problem?');
   console.log(status);
   document.getElementById('status').innerHTML = status;
 }
@@ -53,6 +52,39 @@ function loadFromDV() {
     // Log results
     console.log(result);
     return getLogger().log(result)
+  }).then(function(result) {
+    // Change status back to Ready
+    setStatus('Ready');
+  });
+}
+
+/**
+ * Pushes data to DV360
+ */
+function pushToDV() {
+  setStatus('Running');
+
+  // Clear the Log tab
+  getLogger().clear().then(function(result) {
+    // Create jobs to be executed
+    var jobs = [
+      {
+        'entity': 'LineItem'
+      }
+    ];
+
+    // Run jobs
+    setStatus('Identifying items to update');
+    return new Runner().run('generatePushJobs', jobs);
+  }).then(function(pushJobs) {
+    // Log results
+    getLogger().log(pushJobs);
+    setStatus('Pushing to DV360');
+    console.log(pushJobs);
+    return new Runner().run('push', pushJobs[0].jobs);
+  }).then(function(pushJobs) {
+    // Log results
+    return getLogger().log(pushJobs);
   }).then(function(result) {
     // Change status back to Ready
     setStatus('Ready');

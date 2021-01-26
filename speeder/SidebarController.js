@@ -68,6 +68,48 @@ function generateQAReport(job) {
 }
 
 /**
+ * Creates push jobs
+ *
+ * params:
+ *  job: job passed by the sidebar
+ *  job.entity: Entity to process
+ *  job.jobs: Is populated with a list of jobs to run
+ *
+ * returns: The job object
+ */
+function _generatePushJobs(job) {
+  var loader = getLoader(job.entity);
+
+  loader.generatePushJobs(job);
+
+  return job;
+}
+function generatePushJobs(job) {
+  return _invoke('_generatePushJobs', job);
+}
+
+/**
+ * Pushes to DV360
+ *
+ * params:
+ *  job: job passed by the sidebar
+ *  job.entity: Entity to process
+ *  job.feedItem: Feed item to process
+ *
+ * returns: The job object
+ */
+function _push(job) {
+  var loader = getLoader(job.entity);
+
+  loader.push(job);
+
+  return job;
+}
+function push(job) {
+  return _invoke('_push', job);
+}
+
+/**
  * Clears a given range in the sheet
  *
  * params:

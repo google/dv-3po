@@ -76,8 +76,8 @@ var QA = function() {
             }
           });
 
-          feedItem['Keyword Exclusions'] = keywordExclusions.join(', ');
-          feedItem['Keyword Inclusions'] = keywordInclusions.join(', ');
+          feedItem['Keyword Exclusions'] = keywordExclusions.join(',');
+          feedItem['Keyword Inclusions'] = keywordInclusions.join(',');
         }
       }
 

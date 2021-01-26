@@ -36,27 +36,6 @@ function onOpen(e) {
 }
 
 function run() {
-  var feed = getSheetDAO().sheetToDict('Underwriter');
-
-  each(feed, function(feedItem, index) {
-    var ios = getDVDAO().listInsertionOrders(feedItem['Advertiser ID'], 'campaignId=' + feedItem['Campaign ID']).insertionOrders;
-    console.log(ios);
-
-    feedItem['Total Budget'] = 0;
-
-    each(ios, function(io, index) {
-      console.log(io);
-      console.log(io.budget);
-      console.log('--------------------------');
-      if(io.budget && io.budget.budgetSegments) {
-        each(io.budget.budgetSegments, function(budgetSegment, index) {
-          console.log(budgetSegment);
-          feedItem['Total Budget'] += budgetSegment.budgetAmountMicros / 1000000
-        });
-      }
-    });
-  });
-
-  getSheetDAO().dictToSheet('Underwriter', feed);
+  new Underwriter().validate();
 }
 

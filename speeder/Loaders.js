@@ -25,6 +25,26 @@
  */
 var BaseLoader = function(dvDAO) {
   var sheetDAO = getSheetDAO();
+
+  this.dvdao = getDVDAO();
+
+  /**
+   * Creates push jobs based on data in the tab of the respective entity
+   *
+   * params:
+   *  job: The job object, job.jobs is populated with the list of items that
+   *  need to be processed
+   */
+  this.generatePushJobs = function(job) {
+    var feedProvider = new FeedProvider(this.tabName, this.keys).load();
+    job.jobs = [];
+
+    while(feedItem = feedProvider.next()) {
+      job.jobs.push({'entity': job.entity, 'feedItem': feedItem});
+    }
+
+    return job;
+  }
 }
 
 /**
@@ -102,6 +122,7 @@ InsertionOrderLoader.prototype = Object.create(BaseLoader.prototype);
  * Line item loader
  */
 var LineItemLoader = function(dvDAO) {
+  var that = this;
   this.tabName = 'QA';
   this.keys = ['Advertiser ID', 'Line Item ID'];
 
@@ -162,6 +183,88 @@ var LineItemLoader = function(dvDAO) {
     new FeedProvider(this.tabName, this.keys).setFeed(feed).save();
 
     return job;
+  }
+
+  /**
+   * Returns a list of items of list 2 that are not included in list 1
+   *
+   * params:
+   *  list1: array of strings
+   *  list2: array of strings
+   *
+   * returns: array of strings of items in list 2 that are not included in list 1
+   */
+  function missingItems(list1, list2) {
+    var result = [];
+
+    forEach(list2, function(index, item) {
+      if(list1.indexOf(item) == -1) {
+        result.push(item);
+      }
+    });
+
+    return result;
+  }
+
+  /**
+   * Performs a DV360 push.
+   *
+   * params:
+   *  job.feedItem: The feed item to process
+   *
+   * returns:
+   *  the job
+   */
+  this.push = function(job) {
+    // Fetch the line item
+    var feedItem = job.feedItem;
+
+    var keywordsTargeting = this.dvdao.listTargetingOptions(
+        feedItem['Advertiser ID'], feedItem['Line Item ID'],
+        'TARGETING_TYPE_KEYWORD');
+    var keywordInclusions = [];
+    var keywordExclusions = [];
+
+    forEach(keywordsTargeting.assignedTargetingOptions, function(index, targetingOptions) {
+      var keywordTarget = targetingOptions.keywordDetails;
+
+      if(keywordTarget.negative) {
+        keywordExclusions.push(keywordTarget.keyword);
+      } else {
+        keywordInclusions.push(keywordTarget.keyword);
+      }
+    });
+
+    var newKeywordInclusions = missingItems(keywordInclusions, feedItem['Keyword Inclusions'].split(','));
+    var newKeywordExclusions = missingItems(keywordExclusions, feedItem['Keyword Exclusions'].split(','));
+
+    forEach(newKeywordInclusions, function(index, keyword) {
+      if(keyword) {
+        var payload = {
+          'keywordDetails': {
+            'keyword': keyword,
+            'negative': false
+          }
+        }
+
+        that.dvdao.addTargetingOption(feedItem['Advertiser ID'],
+            feedItem['Line Item ID'], 'TARGETING_TYPE_KEYWORD', payload);
+      }
+    });
+
+    forEach(newKeywordExclusions, function(index, keyword) {
+      if(keyword) {
+        var payload = {
+          'keywordDetails': {
+          'keyword': keyword,
+          'negative': true
+          }
+        }
+
+        that.dvdao.addTargetingOption(feedItem['Advertiser ID'],
+            feedItem['Line Item ID'], 'TARGETING_TYPE_KEYWORD', payload);
+      }
+    });
   }
 
 }
