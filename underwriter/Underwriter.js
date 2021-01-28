@@ -207,7 +207,7 @@ var Underwriter = function() {
           });
         }
 
-        if(budget > feedItem['Total Budget']) {
+        if(budget > feedItem['Credit']) {
           result.push(['ERROR',
               'Scheduled budget exceeds credit limit for advertiser ' +
               feedItem['Advertiser ID'] + ' on credit period from ' +
@@ -230,10 +230,16 @@ var Underwriter = function() {
 
     var logMessages = [];
 
-    logMessages = logMessages.concat(verifyDateRanges(feed));
-    logMessages = logMessages.concat(verifyBudgets(feed));
+    var dateErrors = verifyDateRanges(feed);
+    var budgetErrors = verifyBudgets(feed);
 
-    console.log(logMessages);
+    logMessages = logMessages.concat(dateErrors);
+    logMessages = logMessages.concat(budgetErrors);
+
+    logMessages = [['SUMMARY', dateErrors.length + " date errors, and " +
+      budgetErrors.length + " budget errors found"]];
+
+    logMessages = logMessages.concat(dateErrors).concat(budgetErrors);
 
     getSheetDAO().setValues('Validation', "A1:B" + logMessages.length, logMessages);
   }
