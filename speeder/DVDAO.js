@@ -24,21 +24,7 @@
  */
 var DVDAO = function() {
 
-  // Service responsible for authenticating and generating access tokens
-  // to authenticate API calls
-  var service = new DVService().getDVService();
-
   const BASE_API_URL = "https://displayvideo.googleapis.com/v1";
-
-  // Setup the service and perform authentication if needed
-  if(!service.hasAccess()) {
-    var t = HtmlService.createTemplateFromFile('Authorization');
-    t.authorizationURL = service.getAuthorizationUrl();
-    var output = t.evaluate();
-    output.setTitle("Authorization");
-
-    SpreadsheetApp.getUi().showSidebar(output);
-  }
 
   function apiCall(urlSuffix, options) {
     var url = BASE_API_URL + urlSuffix;
@@ -55,7 +41,7 @@ var DVDAO = function() {
     options.muteHttpExceptions = true;
     // ----
 
-    options.headers['Authorization'] = "Bearer " + service.getAccessToken();
+    options.headers['Authorization'] = "Bearer " + ScriptApp.getOAuthToken();
     options.headers['Content-Type'] = "application/json";
 
     var response = UrlFetchApp.fetch(url, options);

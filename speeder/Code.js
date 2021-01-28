@@ -25,7 +25,6 @@
 function onOpen(e) {
   SpreadsheetApp.getUi()
       .createMenu('DV-3PO Speeder')
-      .addItem('Authenticate', 'authenticate')
       .addItem('Open', 'speeder')
       .addToUi();
 }
@@ -61,4 +60,3 @@ function forEach(items, func) {
     }
   }
 }
-

@@ -1,20 +1,20 @@
 <script>
 /*
- * Copyright 2019 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- *     Unless required by applicable law or agreed to in writing, software
- *     distributed under the License is distributed on an "AS IS" BASIS,
- *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *     See the License for the specific language governing permissions and
- *     limitations under the License.
- */
-
+  * Copyright 2019 Google Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  *     Unless required by applicable law or agreed to in writing, software
+  *     distributed under the License is distributed on an "AS IS" BASIS,
+  *     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  *     See the License for the specific language governing permissions and
+  *     limitations under the License.
+  */
+  
 /**
  * Controller functions for the sidebar UI
  */
@@ -31,7 +31,7 @@ function setStatus(status) {
  * Loads data from DV360 into the sheet
  */
 function loadFromDV() {
-  setStatus('Running');
+  setStatus('Running...');
 
   // Clear the Log tab
   getLogger().clear().then(function(result) {
@@ -54,15 +54,15 @@ function loadFromDV() {
     return getLogger().log(result)
   }).then(function(result) {
     // Change status back to Ready
-    setStatus('Ready');
+    setStatus('The DV360 information has been loaded successfully!');
   });
 }
-
+  
 /**
  * Pushes data to DV360
  */
 function pushToDV() {
-  setStatus('Running');
+  setStatus('Running...');
 
   // Clear the Log tab
   getLogger().clear().then(function(result) {
@@ -74,12 +74,12 @@ function pushToDV() {
     ];
 
     // Run jobs
-    setStatus('Identifying items to update');
+    setStatus('Identifying items to update...');
     return new Runner().run('generatePushJobs', jobs);
   }).then(function(pushJobs) {
     // Log results
     getLogger().log(pushJobs);
-    setStatus('Pushing to DV360');
+    setStatus('Pushing to DV360...');
     console.log(pushJobs);
     return new Runner().run('push', pushJobs[0].jobs);
   }).then(function(pushJobs) {
@@ -87,8 +87,25 @@ function pushToDV() {
     return getLogger().log(pushJobs);
   }).then(function(result) {
     // Change status back to Ready
-    setStatus('Ready');
+    setStatus('The Brand Safety Controls have been pushed successfully!');
   });
 }
 
+/**
+  * Apply Brand Safety Controls to the line items in the QA tab
+*/
+function applyBrandSafetyControlsConfiguration() {
+  setStatus('Running...');
+  google.script.run.withSuccessHandler(successHandler).withFailureHandler(errorHandler).applyBrandSafetyControlsConfiguration();
+}
+
+function successHandler(){
+  setStatus('The Brand Safety Controls have been applied successfully! Please validate them.');
+}
+
+function errorHandler(param){
+  setStatus('There was an error while applying the Brand Safety Controls.');
+}
+
 </script>
+    
