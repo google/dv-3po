@@ -1,16 +1,40 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<title>DV-3PO Speeder</title>
+<header>
+  <title>DV-3PO Speeder</title>
+  <style>
+    button {
+      color: black;
+      padding: 5px 10px;
+      border-radius: 2px;
+      font-weight: bold;
+      font-size: 9pt;
+      outline: none;
+      border: 1px #93c47d solid;
+      box-shadow: 0 1px 1px #5da13e, inset 0 1px 0 #5da13e;
+      background: #93c47d;
+      margin-top: 20px;
+    }
+    .title {
+      font-family: courier,arial,helvetica;
+    }
+    .statusLabel {
+      font-size: 18px;
+    }
+  </style>
+</header>
 <body>
   <br />
-  <b>DV-3PO Speeder</b>
+  <b class="title">DV-3PO Speeder</b>
   <br />
   <hr />
   <br />
-  Status: <span id='status'>Ready</span>
+  <b class="statusLabel">Status:</b> <span id='status'>Ready</span>
   <br />
   <br />
   <button id='loadFromDV' onclick='loadFromDV()'>Load From DV360</button>
+  <br />
+  <button id='applyBrandSafetyControls' onclick='applyBrandSafetyControlsConfiguration()'>Apply & Validate Brand Safety Controls</button>
   <br />
   <button id='pushToDV' onclick='pushToDV()'>Push To DV360</button>
   <br />
