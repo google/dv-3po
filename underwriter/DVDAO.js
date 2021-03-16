@@ -127,6 +127,19 @@ var DVDAO = function() {
     return Utilities.unzip(content);
   }
 
+  /**
+   * Gets an advertiser from DV360 using the write API
+   *
+   * params:
+   *  advertiserId: number with the advertiser id
+   *
+   * returns:
+   *  advertiser object
+   */
+  this.getAdvertiser = function(advertiserId) {
+    return apiCall("/advertisers/" + advertiserId);
+  }
+
 }
 
 var dvDAO;

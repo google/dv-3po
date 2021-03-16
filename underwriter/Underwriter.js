@@ -74,20 +74,29 @@ var Underwriter = function() {
    *   dates: date or list of dates
    *   start: start date
    *   end: end date
+   *   timeZone: timezone to use for comparing dates, optiona, if not provided
+   *   sheet timezone is used
+   *   ignoreTime: boolean, whether to only compare the date portion of the
+   *   dates
    *
    * returns: true if all dates in the dates list are >= than start and <= end
    */
-  function between(dates, start, end) {
+  function between(dates, start, end, timeZone, ignoreTime) {
     if(Array.isArray(dates)) {
       var result = true;
       each(dates, function(date, index) {
-        if(!between(date, start, end)) {
+        if(!between(date, start, end, timeZone, ignoreTime)) {
           result = false;
         }
       });
 
       return result;
     } else {
+      if(ignoreTime) {
+        dates = formatDate(dates, timeZone);
+        start = formatDate(start, timeZone);
+        end = formatDate(end, timeZone);
+      }
       return start <= dates && dates <= end;
     }
   }
@@ -118,18 +127,23 @@ var Underwriter = function() {
       var add = false;
 
       each(io['Parsed Segments'], function(segment, index) {
+
         if(segment['endDate'] >= feed[io['Advertiser ID']].earliestStartDate) {
           var matched = false;
+          var advertiserTimezone = getDVManager().
+              getAdvertiserTimezone(io['Advertiser ID']);
+
           each(feed[io['Advertiser ID']].feed, function(feedItem, index) {
             if(matched) {
               return;
             }
 
             if(between([segment['startDate'], segment['endDate']],
-                  feedItem['Credit Start Date'], feedItem['Credit End Date'])) {
+                  feedItem['Credit Start Date'], feedItem['Credit End Date'],
+                  advertiserTimezone, true)) {
               matched = true;
 
-              if(!feedItem.ios) {
+              if(!feedItem.segments) {
                 feedItem.segments = [];
               }
 
@@ -174,16 +188,21 @@ var Underwriter = function() {
   /**
    * Formats a date in the format of the tool
    *
-   * params: date object to be formatted
+   * params:
+   *  date: object to be formatted
+   *  timeZone: timezone to use for formatting, optional, if not provided sheet
+   *  timezone is used
    *
    * returns: string representation of the date
    */
-  function formatDate(date) {
+  function formatDate(date, timeZone) {
+    timeZone = timeZone || SpreadsheetApp.getActive().getSpreadsheetTimeZone();
+
     if(typeof(date) == "string") {
       date = new Date(date);
     }
 
-    return Utilities.formatDate(date, 'America/New_York', 'yyyy-MM-dd');
+    return Utilities.formatDate(date, timeZone, 'yyyy-MM-dd');
   }
 
   /**
@@ -212,7 +231,9 @@ var Underwriter = function() {
               'Scheduled budget exceeds credit limit for advertiser ' +
               feedItem['Advertiser ID'] + ' on credit period from ' +
               formatDate(feedItem['Credit Start Date']) +  ' to ' +
-              formatDate(feedItem['Credit End Date'])]);
+              formatDate(feedItem['Credit End Date']) +
+              ' credit: $' + feedItem['Credit'].toFixed(2) + ' scheduled budget: $' +
+              budget.toFixed(2)]);
         }
       });
     });
@@ -224,6 +245,9 @@ var Underwriter = function() {
    * Main entry point for performing underwriter validations
    */
   this.validate = function() {
+    getSheetDAO().goToTab('Validation');
+    getSheetDAO().clear('Validation', "A1:B");
+
     var feed = readFeed();
 
     prepareData(feed);
@@ -236,8 +260,10 @@ var Underwriter = function() {
     logMessages = logMessages.concat(dateErrors);
     logMessages = logMessages.concat(budgetErrors);
 
-    logMessages = [['SUMMARY', dateErrors.length + " date errors, and " +
-      budgetErrors.length + " budget errors found"]];
+    logMessages = [
+        ['', 'Executed on: ' + new Date()],
+        ['SUMMARY', dateErrors.length + " date errors, and " + budgetErrors.length + " budget errors found"]
+    ];
 
     logMessages = logMessages.concat(dateErrors).concat(budgetErrors);
 

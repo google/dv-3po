@@ -23,6 +23,8 @@ var DVManager = function() {
   var dao = new getDVDAO();
   var sheetDAO = getSheetDAO();
 
+  var timezones = {};
+
   /**
    * Parses the budget segments into a more useful format including budget,
    * startDate and endDate
@@ -189,6 +191,16 @@ var DVManager = function() {
        resourceName: 'sdfdownloadtasks/media/6371986' } }]
 
     return downloadSDFs(testTasks);
+  }
+
+  this.getAdvertiserTimezone = function(advertiserId) {
+    if(!timezones[advertiserId]) {
+      var advertiser = dao.getAdvertiser(advertiserId);
+
+      timezones[advertiserId] = advertiser.generalConfig.timeZone;
+    }
+
+    return timezones[advertiserId];
   }
 
 }

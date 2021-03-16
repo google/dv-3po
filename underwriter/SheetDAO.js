@@ -284,7 +284,6 @@ var SheetDAO = function() {
    *  sheetName: The name of the tab to open
    */
   this.goToTab = function(sheetName) {
-    console.log('going to tab ' + sheetName);
     SpreadsheetApp.setActiveSheet(SpreadsheetApp.getActive().getSheetByName(sheetName));
   }
 
