@@ -98,15 +98,14 @@ function generatePushJobs(job) {
  *
  * returns: The job object
  */
-function _push(job) {
+function _pushToDV360(job) {
   var loader = getLoader(job.entity);
-
-  loader.push(job);
-
+  loader.pushToDV360(job);
   return job;
 }
-function push(job) {
-  return _invoke('_push', job);
+
+function pushToDV360(job) {
+  return _invoke('_pushToDV360', job);
 }
 
 /**

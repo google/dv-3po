@@ -1,6 +1,6 @@
 <script>
 /*
-  * Copyright 2019 Google Inc.
+  * Copyright 2021 Google Inc.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
   *     See the License for the specific language governing permissions and
   *     limitations under the License.
   */
-  
+
 /**
  * Controller functions for the sidebar UI
  */
@@ -57,7 +57,7 @@ function loadFromDV() {
     setStatus('The DV360 information has been loaded successfully!');
   });
 }
-  
+
 /**
  * Pushes data to DV360
  */
@@ -92,6 +92,32 @@ function pushToDV() {
 }
 
 /**
+ * Pushes data to DV360
+ */
+function pushToDV360() {
+  setStatus('Pushing to DV360...');
+  // Clear the Log tab
+  getLogger().clear().then(function(result) {
+    // Create jobs to be executed
+    var jobs = [
+      {
+        'entity': 'LineItem'
+      }
+    ];
+    setStatus('Identifying items to update...');
+    // Run jobs
+    return new Runner().run('pushToDV360', jobs);
+  }).then(function(result) {
+    // Log results
+    console.log(result);
+    return getLogger().log(result)
+  }).then(function(result) {
+    // Change status
+    setStatus('The Brand Safety Controls have been pushed successfully! Please verify them in the UI.');
+  });
+}
+
+/**
   * Apply Brand Safety Controls to the line items in the QA tab
 */
 function applyBrandSafetyControlsConfiguration() {
@@ -108,4 +134,3 @@ function errorHandler(param){
 }
 
 </script>
-    

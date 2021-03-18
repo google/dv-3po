@@ -141,23 +141,181 @@ var LineItemLoader = function(dvDAO) {
     var feedProvider = new FeedProvider(this.tabName, this.keys).load();
     job.itemsToLoad = [];
     job.idField = 'lineItemId';
-
     var feedItem = null;
+    var advertisersMap = {};
     while(feedItem = feedProvider.next()) {
-      var lineItems = dvDAO.listLineItems(feedItem['Advertiser ID'], feedItem['Insertion Order ID']);
-
-      forEach(lineItems, function(index, lineItem) {
-        var targetingOptions = dvDAO.listTargetingOptions(
-            feedItem['Advertiser ID'], lineItem.lineItemId,
-            'TARGETING_TYPE_KEYWORD');
-
-        lineItem.keywordTargeting = targetingOptions.assignedTargetingOptions;
-      });
-
-      job.itemsToLoad = job.itemsToLoad.concat(lineItems);
+      if(advertisersMap[feedItem['Advertiser ID']]) {
+        advertisersMap[feedItem['Advertiser ID']].add(feedItem['Insertion Order ID']);
+      } else {
+        advertisersMap[feedItem['Advertiser ID']] = new Set();
+        advertisersMap[feedItem['Advertiser ID']].add(feedItem['Insertion Order ID'])
+      }
     }
-
+    for(advertiserKey in advertisersMap) {
+      insertionOrders = advertisersMap[advertiserKey];
+      insertionOrders.forEach(insertionOrder => {
+        var lineItems = dvDAO.listLineItems(advertiserKey, insertionOrder);
+        var lineItemsMap = buildHelperLoaderMapListAction(lineItems, "lineItemId");
+        var origTargetingOptionsRequests = getLineItemAssignedTargetingOptionsRequests(lineItems, advertiserKey);
+        var originalTargetingOptions = dvDAO.executeAll(origTargetingOptionsRequests);
+        getTargetingOptionsBuilder().assignTargetingOptionsToLineItems(lineItemsMap, originalTargetingOptions);
+        job.itemsToLoad = job.itemsToLoad.concat(lineItems);
+      });
+    }
     return job;
+  }
+
+  /**
+   * Builds a map out of an array
+   *
+   * Params:
+   *    array: The array to be converted.
+   *    key: The string that represents the key for each element.
+   */
+  function buildHelperLoaderMapListAction(array, key) {
+    var map = {};
+    array.forEach(function(item) {
+      item.targetingOptions = getTargetingOptionsBuilder().buildTargetingOptionsForLineItems();
+      map[item[key]] = item;
+    });
+    return map;
+  }
+
+  /**
+   * Builds the line items targeting options requests to
+   * retrieve the original targeting options.
+   * The requests will be batched in groups of 1000.
+   *
+   * Params:
+   *  lineItems: The list of line items for each insertion order.
+   *  insertionOrder: The insertion order containing the list of
+   *  line items.
+   * Returns:
+   *  A list of targeting option requests.
+   */
+  function getLineItemAssignedTargetingOptionsRequests(lineItems, insertionOrder) {
+    var targetingOptionsRequests = [];
+    var supportedTargeting = getTargetingOptionsBuilder().getSupportedTargetingOptions();
+    lineItems.forEach(function(lineItem) {
+      var targetingOptionsRequest = dvDAO.buildBulkListLineItemAssignedTargetingOptionsRequest(
+        insertionOrder, lineItem.lineItemId, supportedTargeting);
+      targetingOptionsRequests.push(targetingOptionsRequest);
+    });
+    return targetingOptionsRequests;
+  }
+
+  /**
+   * Performs a DV360 push.
+   */
+  this.pushToDV360 = function() {
+    var feedProvider = new FeedProvider(this.tabName, this.keys).load();
+    var mapHelpers = buildHelperLoaderMapBulkEditAction(feedProvider);
+    var advertisersMap = mapHelpers.advertisersMap;
+    var lineItemsMap = mapHelpers.lineItemsMap;
+    feedProvider.reset();
+    var origTargetingOptionsRequests = getLineItemAssignedTargetingOptionsRequestsUsingFeed(
+      feedProvider);
+    var originalTargetingOptions = dvDAO.executeAll(origTargetingOptionsRequests);
+    getTargetingOptionsBuilder().assignTargetingOptionsToLineItems(lineItemsMap, originalTargetingOptions);
+    feedProvider.reset();
+    var bulkEditTORequests = getBulkEditLineItemAssignedTargetingOptionsRequests(
+      feedProvider, lineItemsMap, advertisersMap);
+    var responses = dvDAO.executeAll(bulkEditTORequests);
+    return `Successful reponses BATCH API length -> ${responses.length}`
+  }
+
+  /**
+   * Builds helper maps for advertisers and line items.
+   * advertisersMap: contains advertiser's full targeting options lists
+   * to compare to the new targeting options.
+   * lineItemsMap: contains the new targeting options.
+   *
+   * Params:
+   *  feedProvider: The feed provider that contains all the items in
+   *  the QA tab.
+   *
+   * Returns:
+   *  An object with the advertiser and line item maps.
+   */
+  function buildHelperLoaderMapBulkEditAction(feedProvider) {
+    var advertisersMap = {};
+    var lineItemsMap = {};
+    while(feedItem = feedProvider.next()) {
+      advertisersMap[feedItem['Advertiser ID']] = {};
+      lineItemsMap[feedItem['Line Item ID']] = {
+        "targetingOptions": getTargetingOptionsBuilder().buildTargetingOptionsForLineItems()
+      };
+    }
+    for(advertiserKey in advertisersMap) {
+      advertiser = advertisersMap[advertiserKey];
+      var allSensitiveCategoriesMap = {};
+      var allSensitiveCategories = dvDAO.listAllTargetingOptions(advertiserKey,
+      'TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION');
+      if(allSensitiveCategories.targetingOptions) {
+        allSensitiveCategories.targetingOptions.forEach(function(sensitiveCategory) {
+          var key = sensitiveCategory.sensitiveCategoryDetails.sensitiveCategory;
+          allSensitiveCategoriesMap[key] = {
+            "targetingOptionId": sensitiveCategory.targetingOptionId,
+            "displayName": key
+          };
+        });
+      }
+      advertiser["allSensitiveCategoriesMap"] = allSensitiveCategoriesMap;
+    }
+    return { advertisersMap, lineItemsMap }
+  }
+
+  /**
+   * Builds the line items targeting options requests form the feed to
+   * retrieve the original targeting options.
+   * The requests will be batched in groups of 1000.
+   *
+   * Params:
+   *  feedProvider: The feed provider that contains all the items in
+   *  the QA tab.
+   *
+   * Returns:
+   *  A list of targeting options requests.
+   */
+  function getLineItemAssignedTargetingOptionsRequestsUsingFeed(feedProvider) {
+    var targetingOptionsRequests = [];
+    var supportedTargeting = getTargetingOptionsBuilder().getSupportedTargetingOptions();
+    while(feedItem = feedProvider.next()) {
+      var targetingOptionsRequest = that.dvdao.buildBulkListLineItemAssignedTargetingOptionsRequest(
+        feedItem['Advertiser ID'], feedItem['Line Item ID'], supportedTargeting);
+      targetingOptionsRequests.push(targetingOptionsRequest);
+    }
+    return targetingOptionsRequests;
+  }
+
+  /**
+   * Builds the bulk edit line item assigned targeting options
+   * requests that will contain all the supported targeting
+   * options in a sigle request.
+   *
+   * Params:
+   *  feedProvider: The feed provider that contains all the items in
+   *  the QA tab.
+   *  lineItemsMap: A map containing each line item object under its own key.
+   *  advertisersMap: A map containing each advertiser object under its own key.
+   *  This map contains full targeting options lists to compare with new assigned
+   *  targeting options for the line items.
+   *
+   * Returns:
+   *  A list of bulk edit requests.
+   */
+  function getBulkEditLineItemAssignedTargetingOptionsRequests(feedProvider, lineItemsMap,
+   advertisersMap) {
+    var bulkEditRequests = [];
+    while(feedItem = feedProvider.next()) {
+      lineItem = lineItemsMap[feedItem["Line Item ID"]];
+      var bulkCreateTOPayload = getTargetingOptionsBuilder().buildNewAssignedTargetingOptionsPayload(
+        lineItem, feedItem, advertisersMap);
+      var bulkEditRequest = dvDAO.buildBulkEditLineItemAssignedTargetingOptionsRequest(
+        feedItem['Advertiser ID'], feedItem["Line Item ID"], bulkCreateTOPayload);
+      bulkEditRequests.push(bulkEditRequest);
+    }
+    return bulkEditRequests;
   }
 
   /**
@@ -183,88 +341,6 @@ var LineItemLoader = function(dvDAO) {
     new FeedProvider(this.tabName, this.keys).setFeed(feed).save();
 
     return job;
-  }
-
-  /**
-   * Returns a list of items of list 2 that are not included in list 1
-   *
-   * params:
-   *  list1: array of strings
-   *  list2: array of strings
-   *
-   * returns: array of strings of items in list 2 that are not included in list 1
-   */
-  function missingItems(list1, list2) {
-    var result = [];
-
-    forEach(list2, function(index, item) {
-      if(list1.indexOf(item) == -1) {
-        result.push(item);
-      }
-    });
-
-    return result;
-  }
-
-  /**
-   * Performs a DV360 push.
-   *
-   * params:
-   *  job.feedItem: The feed item to process
-   *
-   * returns:
-   *  the job
-   */
-  this.push = function(job) {
-    // Fetch the line item
-    var feedItem = job.feedItem;
-
-    var keywordsTargeting = this.dvdao.listTargetingOptions(
-        feedItem['Advertiser ID'], feedItem['Line Item ID'],
-        'TARGETING_TYPE_KEYWORD');
-    var keywordInclusions = [];
-    var keywordExclusions = [];
-
-    forEach(keywordsTargeting.assignedTargetingOptions, function(index, targetingOptions) {
-      var keywordTarget = targetingOptions.keywordDetails;
-
-      if(keywordTarget.negative) {
-        keywordExclusions.push(keywordTarget.keyword);
-      } else {
-        keywordInclusions.push(keywordTarget.keyword);
-      }
-    });
-
-    var newKeywordInclusions = missingItems(keywordInclusions, feedItem['Keyword Inclusions'].split(','));
-    var newKeywordExclusions = missingItems(keywordExclusions, feedItem['Keyword Exclusions'].split(','));
-
-    forEach(newKeywordInclusions, function(index, keyword) {
-      if(keyword) {
-        var payload = {
-          'keywordDetails': {
-            'keyword': keyword,
-            'negative': false
-          }
-        }
-
-        that.dvdao.addTargetingOption(feedItem['Advertiser ID'],
-            feedItem['Line Item ID'], 'TARGETING_TYPE_KEYWORD', payload);
-      }
-    });
-
-    forEach(newKeywordExclusions, function(index, keyword) {
-      if(keyword) {
-        var payload = {
-          'keywordDetails': {
-          'keyword': keyword,
-          'negative': true
-          }
-        }
-
-        that.dvdao.addTargetingOption(feedItem['Advertiser ID'],
-            feedItem['Line Item ID'], 'TARGETING_TYPE_KEYWORD', payload);
-      }
-    });
   }
 
 }

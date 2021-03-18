@@ -49,41 +49,29 @@ var QA = function() {
    */
   this.defaultQAReport = function(hierarchy) {
     var result = [];
-
     forEachLineItem(hierarchy, function(insertionOrder, lineItem) {
       var feedItem = {};
-
       if(insertionOrder) {
         feedItem['Advertiser ID'] = insertionOrder.advertiserId;
         feedItem['Insertion Order ID'] = insertionOrder.insertionOrderId;
         feedItem['Insertion Order Name'] = insertionOrder.displayName;
       }
-
       if(lineItem) {
         feedItem['Line Item ID'] = lineItem.lineItemId;
         feedItem['Line Item Name'] = lineItem.displayName;
-
-        console.log(lineItem);
-        if(lineItem.keywordTargeting) {
-          keywordExclusions = [];
-          keywordInclusions = [];
-
-          forEach(lineItem.keywordTargeting, function(index, keyword) {
-            if(keyword.keywordDetails.negative) {
-              keywordExclusions.push(keyword.keywordDetails.keyword);
-            } else {
-              keywordInclusions.push(keyword.keywordDetails.keyword);
-            }
-          });
-
-          feedItem['Keyword Exclusions'] = keywordExclusions.join(',');
-          feedItem['Keyword Inclusions'] = keywordInclusions.join(',');
+        if(lineItem.targetingOptions) {
+          if( lineItem.targetingOptions.keywordTargeting) {
+            feedItem['Keyword Exclusions'] = lineItem.targetingOptions.keywordTargeting.keywordExclusions.join(',');
+            feedItem['Keyword Inclusions'] = lineItem.targetingOptions.keywordTargeting.keywordInclusions.join(',');
+          }
+          if(lineItem.targetingOptions.sensitiveCategoryTargeting) {
+            feedItem['Sensitive Category Exclusions'] = lineItem.targetingOptions.sensitiveCategoryTargeting.join(',');
+          }
         }
+        feedItem['Status'] = "LOADED";
       }
-
       result.push(feedItem);
     });
-
     return result;
   }
 }
