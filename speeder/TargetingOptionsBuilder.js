@@ -21,9 +21,6 @@
 
 var TargetingOptionsBuilder = function () {
 
-    var TARGETING_TYPE_KEYWORD = "TARGETING_TYPE_KEYWORD";
-    var TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION = "TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION";
-
     /**
      * Assigns the targeting options to the respective line item.
      * Since the requests are batched in groups
@@ -48,7 +45,7 @@ var TargetingOptionsBuilder = function () {
                     var foundLI = lineItemsMap[lineItemId];
                     if (foundLI) {
                         switch (targeting.targetingType) {
-                            case TARGETING_TYPE_KEYWORD:
+                            case constants.TARGETING_TYPE_KEYWORD:
                                 var kd = targeting.keywordDetails;
                                 if (kd.negative) {
                                     foundLI.targetingOptions.keywordTargeting.keywordExclusions.push(
@@ -58,7 +55,7 @@ var TargetingOptionsBuilder = function () {
                                         kd.keyword);
                                 }
                                 break;
-                            case TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION:
+                            case constants.TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION:
                                 foundLI.targetingOptions.sensitiveCategoryTargeting.push(
                                     targeting.sensitiveCategoryExclusionDetails.sensitiveCategory);
                                 break;
@@ -94,11 +91,11 @@ var TargetingOptionsBuilder = function () {
                 "targetingType": supportedTO
             }
             switch (supportedTO) {
-                case TARGETING_TYPE_KEYWORD:
+                case constants.TARGETING_TYPE_KEYWORD:
                     newAssignedTargetingOption["assignedTargetingOptions"] = buildAllKeywordPayloads(
                         lineItem.targetingOptions.keywordTargeting, feedItem);
                     break;
-                case TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION:
+                case constants.TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION:
                     newAssignedTargetingOption["assignedTargetingOptions"] = buildSensitiveCategoryPayloads(
                         lineItem.targetingOptions.sensitiveCategoryTargeting,
                         advertisersMap[feedItem['Advertiser ID']]["allSensitiveCategoriesMap"], feedItem);
@@ -209,11 +206,20 @@ var TargetingOptionsBuilder = function () {
      * to the user configuration in the BS Config tab.
      *
      * Returns:
-     *  An object containing the supported targeting options.
+     *  A list containing the supported targeting options.
      */
     this.getSupportedTargetingOptions = function () {
-        var sTOs = [TARGETING_TYPE_KEYWORD, TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION];
-        return sTOs;
+        var sheetDao = new SheetDAO();
+        var configData = sheetDao.sheetToDict(constants.BS_CONFIG_TAB_NAME);
+        var supportedTargetingOptions = [];
+        configData.forEach(bs => {
+            var bsType = bs[constants.BRAND_SAFETY_CONTROL_HEADER];
+            var enabled = bs[constants.ENABLED_HEADER]
+            if (enabled) {
+                supportedTargetingOptions.push(bsType);
+            }
+        });
+        return supportedTargetingOptions;
     }
 
     /**

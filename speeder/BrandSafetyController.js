@@ -22,7 +22,8 @@
 var QA_TAB = "QA";
 
 /**
-  * Apply Brand Safety Controls to ALL the line items in the QA tab or ONLY to the specified line item list in the 'Line Items For ${brandControlsType}' tab.
+  * Apply Brand Safety Controls to ALL the line items in the QA tab or ONLY
+  * to the specified line item list in the 'Line Items For ${brandControlsType}' tab.
 */
 function applyBrandSafetyControlsConfiguration() {
   var sheet = new SheetDAO();
@@ -44,45 +45,39 @@ function setChangesToSheet(sheet, sheetName, data) {
   sheet.dictToSheet(sheetName, data);
 }
 
-var BrandSafetyControlsConfigurationService = function() {
+var BrandSafetyControlsConfigurationService = function () {
 
   /* PUBLIC METHODS */
 
-  var STATUS_UNCHANGED = "UNCHANGED";
-  var STATUS_MODIFIED = `%s MODIFIED`;
-  var LINE_ITEM_ID_LABEL = "Line Item ID";
-  var LI_KEYWORD_INCLUSIONS_TAB_NAME = "Line Items For Keyword Inclusions";
-  var LI_KEYWORD_EXCLUSIONS_TAB_NAME = "Line Items For Keyword Exclusions";
-  var LI_TO_MODIFY_KEY = "lineItemsToModify";
-  var LI_TO_MODIFY_TAB_NAME_KEY = "lineItemsToModifyTabName";
-  var NEW_KEYWORDS_TO_ADD_KEY = "newKeywordsToAdd";
-  var STATUS_HEADER = "Status";
-  var LINE_ITEMS_HEADER = "Line Items";
-
   /**
-    * Apply Brand Safety Controls to ALL the line items in the QA tab or ONLY to the specified line item list in the 'Line Items For ${brandControlsType}' tab.
+    * Apply Brand Safety Controls to ALL the line items in the QA tab or ONLY
+    * to the specified line item list in the 'Line Items For ${brandControlsType}' tab.
   */
-  this.applyBrandSafetyControlsConfiguration = function(sheet, qaData) {
+  this.applyBrandSafetyControlsConfiguration = function (sheet, qaData) {
     var brandSafetyControlsConfiguration = buildParametersForBrandSafetyControlsConfiguration(sheet);
     qaData.forEach(row => {
-      var qaLineItem = row[LINE_ITEM_ID_LABEL];
+      var qaLineItem = row[constants.LINE_ITEM_ID_HEADER];
       var modifiedBrandSafetyControls = [];
-      for(var brandSafetyControlsType in brandSafetyControlsConfiguration) {
-        var oldKeywordsStr = row[brandSafetyControlsType];
-        var oldKeywords = oldKeywordsStr.split(",");
-        if(oldKeywords.length === 1 && !oldKeywords[0]) {
-          // avoid adding empty keyword
-          oldKeywords = [];
+      for (var brandSafetyControlsType in brandSafetyControlsConfiguration) {
+        var oldBSItemsStr = row[brandSafetyControlsType];
+        var oldBSItems = oldBSItemsStr.split(",");
+        if (oldBSItems.length === 1 && !oldBSItems[0]) {
+          // avoid adding empty brand safety item
+          oldBSItems = [];
         }
         var config = brandSafetyControlsConfiguration[brandSafetyControlsType]
-        var lineItemsToModify = config[LI_TO_MODIFY_KEY];
-        if(modifyLineItem(lineItemsToModify, qaLineItem)) {
-          var newKeywordsToAdd = oldKeywords.concat(config[NEW_KEYWORDS_TO_ADD_KEY]);
-          row[brandSafetyControlsType] = newKeywordsToAdd.join(",");
-          modifiedBrandSafetyControls.push(brandSafetyControlsType)
+        var lineItemsToModify = config[constants.LI_TO_MODIFY_KEY];
+        if (modifyLineItem(lineItemsToModify, qaLineItem)) {
+          if (config[constants.NEW_BS_ITEMS_TO_ADD_KEY].length > 0) {
+            var newBSItemsToAdd = oldBSItems.concat(config[constants.NEW_BS_ITEMS_TO_ADD_KEY]);
+            let uniqueNewBSItemsToAdd = [...new Set(newBSItemsToAdd)];
+            row[brandSafetyControlsType] = uniqueNewBSItemsToAdd.join(",");
+            modifiedBrandSafetyControls.push(brandSafetyControlsType)
+          }
         }
       }
-      row[STATUS_HEADER] = modifiedBrandSafetyControls.length > 0 ? STATUS_MODIFIED.replace("%s", modifiedBrandSafetyControls.join(", ")) : STATUS_UNCHANGED;
+      row[constants.STATUS_HEADER] = modifiedBrandSafetyControls.length > 0 ?
+        constants.STATUS_MODIFIED.replace("%s", modifiedBrandSafetyControls.join(", ")) : constants.STATUS_UNCHANGED;
     });
   }
 
@@ -92,37 +87,57 @@ var BrandSafetyControlsConfigurationService = function() {
     * Build the brand safety controls configuration template.
   */
   function getConfigurationTemplate() {
-    return {
-      "Keyword Inclusions" : {
-        "newKeywordsToAdd": [],
-        "lineItemsToModifyTabName": LI_KEYWORD_INCLUSIONS_TAB_NAME,
-        "lineItemsToModify": []
-      },
-      "Keyword Exclusions" : {
-        "newKeywordsToAdd": [],
-        "lineItemsToModifyTabName": LI_KEYWORD_EXCLUSIONS_TAB_NAME,
-        "lineItemsToModify": []
+    var supportedTargetingOptions = getTargetingOptionsBuilder().getSupportedTargetingOptions();
+    var configurationTemplate = {};
+    supportedTargetingOptions.forEach(supportedTO => {
+      switch (supportedTO) {
+        case constants.TARGETING_TYPE_KEYWORD:
+          configurationTemplate[constants.KEYWORD_INCLUSIONS_HEADER] = getBasicTemplateConfiguration(constants.LI_KEYWORD_INCLUSIONS_TAB_NAME)
+          configurationTemplate[constants.KEYWORD_EXCLUSIONS_HEADER] = getBasicTemplateConfiguration(constants.LI_KEYWORD_EXCLUSIONS_TAB_NAME)
+          break;
+        case constants.TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION:
+          configurationTemplate[constants.SENSITIVE_CATEGORIES_HEADER] = getBasicTemplateConfiguration(constants.LI_SENSITIVE_CATEGORY_EXCLUSIONS_TAB_NAME)
+          break;
+        default:
+          break;
       }
+    });
+    return configurationTemplate
+  }
+
+  /**
+   * Build the basic brand safety controls configuration template.
+   * Params:
+   *  tabName: The tab name to get the line items list from
+  */
+  function getBasicTemplateConfiguration(tabName) {
+    return {
+      "newBSItemsToAdd": [],
+      "lineItemsToModifyTabName": tabName,
+      "lineItemsToModify": []
     }
   }
 
   /**
-    * Build the brand safety controls configuration template that will include the required parameters for the setting.
-    * 1. The new keywords to add.
-    * 2. The specific line items to add the keywords to. If the array length is zero, the keywords will be applied to ALL the line items in the QA tab.
+    * Build the brand safety controls configuration template that will include
+    * the required parameters for the setting.
+    * 1. The new Brand Safety items to add.
+    * 2. The specific line items to add the Brand Safety items to. If the array
+    * length is zero, the Brand Safety items will be applied to ALL the line items
+    * in the QA tab.
     * params:
-    * sheet: sheet DAO to handle reading and writing in the sheet.
+    *  sheet: sheet DAO to handle reading and writing in the sheet.
   */
   function buildParametersForBrandSafetyControlsConfiguration(sheet) {
     var configurationTemplate = getConfigurationTemplate();
-    for(var bscConfigType in configurationTemplate) {
+    for (var bscConfigType in configurationTemplate) {
       var config = configurationTemplate[bscConfigType];
-      var newKeywordsData = sheet.sheetToDict(bscConfigType);
-      var newKeywordsToAdd = objectListToArray(newKeywordsData, bscConfigType);
-      var lineItemsToModifyData = sheet.sheetToDict(config[LI_TO_MODIFY_TAB_NAME_KEY]);
-      var lineItemsToModify = objectListToArray(lineItemsToModifyData, LINE_ITEMS_HEADER);
-      config[NEW_KEYWORDS_TO_ADD_KEY] = newKeywordsToAdd;
-      config[LI_TO_MODIFY_KEY] = lineItemsToModify
+      var newBSItemsData = sheet.sheetToDict(bscConfigType);
+      var newBSItemsToAdd = objectListToArray(newBSItemsData, bscConfigType);
+      var lineItemsToModifyData = sheet.sheetToDict(config[constants.LI_TO_MODIFY_TAB_NAME_KEY]);
+      var lineItemsToModify = objectListToArray(lineItemsToModifyData, constants.LINE_ITEMS_HEADER);
+      config[constants.NEW_BS_ITEMS_TO_ADD_KEY] = newBSItemsToAdd;
+      config[constants.LI_TO_MODIFY_KEY] = lineItemsToModify
     }
     return configurationTemplate;
   }
@@ -130,9 +145,13 @@ var BrandSafetyControlsConfigurationService = function() {
   /**
     * Evaluate if a line item should be modified.
     * Rules to modify line items:
-    *   1. There are NO line items in the 'Line Items For ${brandControlsType}' tab, which means that the brand safety controls will be applied to ALL the line items in the QA tab.
-    *   2. Or the line item currently being evaluated is included in the 'Line Items For ${brandControlsType}' tab.
-    * Only if either of the conditions above is met, the line items will be modified, otherwise they will remain unchanged.
+    *   1. There are NO line items in the 'Line Items For ${brandControlsType}' tab,
+    * which means that the brand safety controls will be applied to ALL the
+    * line items in the QA tab.
+    *   2. Or the line item currently being evaluated is included in the 'Line Items
+    * For ${brandControlsType}' tab.
+    * Only if either of the conditions above is met, the line items will be modified,
+    * otherwise they will remain unchanged.
     * params:
     *  lineItemsToModify: list of line items from the 'Line Items For ${brandControlsType}' tab.
     *  qaLineItem: current line item being evaluated for modification.
@@ -142,9 +161,11 @@ var BrandSafetyControlsConfigurationService = function() {
   }
 
   /**
-    * Evaluate if a line item exists in the line item list from the 'Line Items For ${brandControlsType}' tab.
+    * Evaluate if a line item exists in the line item list from the 'Line Items
+    * For ${brandControlsType}' tab.
     * params:
-    *  lineItemsToModify: list of line items from the 'Line Items For ${brandControlsType}' tab.
+    *  lineItemsToModify: list of line items from the 'Line Items
+    * For ${brandControlsType}' tab.
     *  qaLineItem: current line item being evaluated for modification.
   */
   function lineItemFound(lineItemsToModidy, qaLineItem) {
@@ -158,10 +179,10 @@ var BrandSafetyControlsConfigurationService = function() {
     * Convert a list of objects to a plain list.
     * params:
     *  objList: the object list to be transformed to a plain list.
-    *  keywordsType: the type of brand safety elements contained in the objList.
+    *  brandSafetyItemsType: the type of brand safety elements contained in the objList.
   */
-  function objectListToArray(objList, keywordsType) {
-    var array = objList.map(element => element[keywordsType]);
+  function objectListToArray(objList, brandSafetyItemsType) {
+    var array = objList.map(element => element[brandSafetyItemsType]);
     return array;
   }
 }

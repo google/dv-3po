@@ -231,13 +231,16 @@ var DVDAO = function() {
    * params:
    *  advertiserId: Advertiser ID
    *  insertionOrderId: Insertion order ID
+   *  fields - default param: A list of fields to be retrieved by the API.
    *
    * returns:
    *  List of line items under the specified insertion order
    */
-  this.listLineItems = function(advertiserId, insertionOrderId) {
+  this.listLineItems = function(advertiserId, insertionOrderId, 
+  fields = ["lineItemId", "name", "displayName", "lineItemType", "insertionOrderId", "advertiserId", "campaignId"]) {
     var result = [];
-    var apiUrl = "/advertisers/" + advertiserId + "/lineItems?filter=insertionOrderId=" + insertionOrderId;
+    var apiUrl = "/advertisers/" + advertiserId + "/lineItems?filter=insertionOrderId=" + insertionOrderId
+    + "&fields=lineItems(" + fields.join(",") + ")";
     var response = apiCall(apiUrl);
 
     while(response && response.lineItems && response.lineItems.length > 0) {
