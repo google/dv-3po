@@ -17,9 +17,16 @@
 var constants = {
   // Field names
   "LINE_ITEM_ID_HEADER" : "Line Item ID",
+  "LINE_ITEM_NAME_HEADER": "Line Item Name",
+  "ADVERTISER_ID_HEADER": 'Advertiser ID',
+  "INSERTION_ORDER_ID_HEADER": "Insertion Order ID",
+  "INSERTION_ORDER_NAME": "Insertion Order Name",
   "KEYWORD_INCLUSIONS_HEADER": "Keyword Inclusions",
   "KEYWORD_EXCLUSIONS_HEADER": "Keyword Exclusions",
   "SENSITIVE_CATEGORIES_HEADER": "Sensitive Category Exclusions",
+  "ORIGINAL_KEYWORD_INCLUSIONS_HEADER": "Original Keyword Inclusions",
+  "ORIGINAL_KEYWORD_EXCLUSIONS_HEADER": "Original Keyword Exclusions",
+  "ORIGINAL_SENSITIVE_CATEGORIES_HEADER": "Original Sensitive Category Exclusions",
   "LINE_ITEMS_HEADER": "Line Items",
   "STATUS_HEADER": "Status",
   "BRAND_SAFETY_CONTROL_HEADER": "Brand Safety Control",
@@ -27,6 +34,7 @@ var constants = {
   // Status
   "STATUS_UNCHANGED" : "UNCHANGED",
   "STATUS_MODIFIED" : `%s MODIFIED`,
+  "STATUS_LOADED": "LOADED",
   // Tab Names
   "LI_KEYWORD_INCLUSIONS_TAB_NAME" : "Line Items For Keyword Inclusions",
   "LI_KEYWORD_EXCLUSIONS_TAB_NAME" : "Line Items For Keyword Exclusions",
@@ -36,7 +44,6 @@ var constants = {
   "LI_TO_MODIFY_KEY" : "lineItemsToModify",
   "LI_TO_MODIFY_TAB_NAME_KEY" : "lineItemsToModifyTabName",
   "NEW_BS_ITEMS_TO_ADD_KEY" : "newBSItemsToAdd",
-  "STATUS_HEADER" : "Status",
   // Targeting Types
   "TARGETING_TYPE_KEYWORD" : "TARGETING_TYPE_KEYWORD",
   "TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION" : "TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION", 

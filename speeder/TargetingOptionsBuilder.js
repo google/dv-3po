@@ -74,7 +74,6 @@ var TargetingOptionsBuilder = function () {
      * a single request.
      *
      * Params:
-     *  lineItem: The line item to assign the new targeting options to.
      *  feedItem: The current feed item representing the lineItem above.
      *  advertisersMap: A map containing each advertiser object under its own key.
      *  This map contains full targeting options lists to compare with new assigned
@@ -83,7 +82,7 @@ var TargetingOptionsBuilder = function () {
      * Returns:
      *  A list of new assigned tarting options for a line item.
      */
-    this.buildNewAssignedTargetingOptionsPayload = function (lineItem, feedItem, advertisersMap) {
+    this.buildNewAssignedTargetingOptionsPayload = function (feedItem, advertisersMap) {
         var supportedTargetingOptions = this.getSupportedTargetingOptions();
         var newAssignedTargetingOptions = [];
         supportedTargetingOptions.forEach(supportedTO => {
@@ -92,18 +91,19 @@ var TargetingOptionsBuilder = function () {
             }
             switch (supportedTO) {
                 case constants.TARGETING_TYPE_KEYWORD:
-                    newAssignedTargetingOption["assignedTargetingOptions"] = buildAllKeywordPayloads(
-                        lineItem.targetingOptions.keywordTargeting, feedItem);
+                    newAssignedTargetingOption["assignedTargetingOptions"] = buildAllKeywordPayloads(feedItem);
                     break;
                 case constants.TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION:
                     newAssignedTargetingOption["assignedTargetingOptions"] = buildSensitiveCategoryPayloads(
-                        lineItem.targetingOptions.sensitiveCategoryTargeting,
-                        advertisersMap[feedItem['Advertiser ID']]["allSensitiveCategoriesMap"], feedItem);
+                        advertisersMap[feedItem[constants.ADVERTISER_ID_HEADER]].allSensitiveCategoriesMap,
+                        feedItem);
                     break;
                 default:
                     break;
             }
-            newAssignedTargetingOptions.push(newAssignedTargetingOption);
+            if(validBSOptions(newAssignedTargetingOption.assignedTargetingOptions)) {
+                newAssignedTargetingOptions.push(newAssignedTargetingOption);
+            }
         });
         var payload = {
             "createRequests": newAssignedTargetingOptions
@@ -116,21 +116,18 @@ var TargetingOptionsBuilder = function () {
      * considering negative and positive keywords.
      *
      * Params:
-     *  keywordTargeting: The original keyword targeting for the line item.
      *  This will be used to compare and identify the new keywords to be added.
      *  feedItem: The current feed item representing the lineItem.
      *
      * Returns:
      *  A list of keywords payloads for the bulk request.
      */
-    function buildAllKeywordPayloads(keywordTargeting, feedItem) {
+    function buildAllKeywordPayloads(feedItem) {
         var allKeywordPayloads = [];
-        var newKeywordInclusions = missingItems(keywordTargeting.keywordInclusions,
-            feedItem['Keyword Inclusions'].split(','));
+        var newKeywordInclusions = feedItem[constants.KEYWORD_INCLUSIONS_HEADER].split(',');
         allKeywordPayloads = allKeywordPayloads.concat(buildKeywordPayloads(
             newKeywordInclusions, false))
-        var newKeywordExclusions = missingItems(keywordTargeting.keywordExclusions,
-            feedItem['Keyword Exclusions'].split(','));
+        var newKeywordExclusions = feedItem[constants.KEYWORD_EXCLUSIONS_HEADER].split(',');
         allKeywordPayloads = allKeywordPayloads.concat(buildKeywordPayloads(
             newKeywordExclusions, true));
         return allKeywordPayloads;
@@ -149,7 +146,8 @@ var TargetingOptionsBuilder = function () {
      */
     function buildKeywordPayloads(keywords, isNegative) {
         var payloads = [];
-        keywords.forEach(function (keyword) {
+        if(validBSOptions(keywords)) {
+            keywords.forEach(function (keyword) {
             if (keyword) {
                 var payload = {
                     'keywordDetails': {
@@ -159,7 +157,8 @@ var TargetingOptionsBuilder = function () {
                 };
                 payloads.push(payload);
             }
-        });
+            });
+        }
         return payloads;
     }
 
@@ -167,10 +166,6 @@ var TargetingOptionsBuilder = function () {
      * Builds the payloads for the sensitive categories targeting options.
      *
      * Params:
-     *  sensitiveCategories: The original sensitive categories targeting
-     *  for the line item.
-     *  This will be used to compare and identify the new sensitive
-     *  categories to be added.
      *  allSensitiveCategoriesMap: A list of all supported sensitive
      *  categories within an advertiser. This will be used to obtain
      *  the sensitive category id for the new targeting options.
@@ -179,12 +174,11 @@ var TargetingOptionsBuilder = function () {
      * Returns:
      *  A list of sensitive categories payloads for the bulk request.
      */
-    function buildSensitiveCategoryPayloads(sensitiveCategories, allSensitiveCategoriesMap,
-        feedItem) {
+    function buildSensitiveCategoryPayloads(allSensitiveCategoriesMap, feedItem) {
         var sensitiveCategoryPayloads = [];
-        var newSensitiveCategoryExclusions = missingItems(sensitiveCategories,
-            feedItem['Sensitive Category Exclusions'].split(','));
-        newSensitiveCategoryExclusions.forEach(function (sensitiveCategory) {
+        var newSensitiveCategoryExclusions = feedItem[constants.SENSITIVE_CATEGORIES_HEADER].split(',');
+        if(validBSOptions(newSensitiveCategoryExclusions)) {
+            newSensitiveCategoryExclusions.forEach(function (sensitiveCategory) {
             var scFound = allSensitiveCategoriesMap[sensitiveCategory];
             if (scFound) {
                 var payload = {
@@ -195,8 +189,22 @@ var TargetingOptionsBuilder = function () {
                 };
                 sensitiveCategoryPayloads.push(payload);
             }
-        });
+            });
+        }
         return sensitiveCategoryPayloads;
+    }
+
+    /**
+     * Validates brand safety options.
+     *
+     * Params:
+     *  array: A list of brand safety options.
+     *
+     * Returns:
+     *  A boolean for valid/invalid brand safety options.
+     */
+    function validBSOptions(array) {
+        return array.length > 0 && array[0];
     }
 
     /**
@@ -220,25 +228,6 @@ var TargetingOptionsBuilder = function () {
             }
         });
         return supportedTargetingOptions;
-    }
-
-    /**
-     * Returns a list of items of list 2 that are not included in list 1
-     *
-     * params:
-     *  list1: array of strings
-     *  list2: array of strings
-     *
-     * returns: array of strings of items in list 2 that are not included in list 1
-     */
-    function missingItems(list1, list2) {
-        var result = [];
-        forEach(list2, function (index, item) {
-            if (list1.indexOf(item) == -1) {
-                result.push(item);
-            }
-        });
-        return result;
     }
 
     /**

@@ -211,15 +211,9 @@ var LineItemLoader = function(dvDAO) {
     var feedProvider = new FeedProvider(this.tabName, this.keys).load();
     var mapHelpers = buildHelperLoaderMapBulkEditAction(feedProvider);
     var advertisersMap = mapHelpers.advertisersMap;
-    var lineItemsMap = mapHelpers.lineItemsMap;
-    feedProvider.reset();
-    var origTargetingOptionsRequests = getLineItemAssignedTargetingOptionsRequestsUsingFeed(
-      feedProvider);
-    var originalTargetingOptions = dvDAO.executeAll(origTargetingOptionsRequests);
-    getTargetingOptionsBuilder().assignTargetingOptionsToLineItems(lineItemsMap, originalTargetingOptions);
     feedProvider.reset();
     var bulkEditTORequests = getBulkEditLineItemAssignedTargetingOptionsRequests(
-      feedProvider, lineItemsMap, advertisersMap);
+      feedProvider, advertisersMap);
     var responses = dvDAO.executeAll(bulkEditTORequests);
     return `Successful reponses BATCH API length -> ${responses.length}`
   }
@@ -266,29 +260,6 @@ var LineItemLoader = function(dvDAO) {
   }
 
   /**
-   * Builds the line items targeting options requests form the feed to
-   * retrieve the original targeting options.
-   * The requests will be batched in groups of 1000.
-   *
-   * Params:
-   *  feedProvider: The feed provider that contains all the items in
-   *  the QA tab.
-   *
-   * Returns:
-   *  A list of targeting options requests.
-   */
-  function getLineItemAssignedTargetingOptionsRequestsUsingFeed(feedProvider) {
-    var targetingOptionsRequests = [];
-    var supportedTargeting = getTargetingOptionsBuilder().getSupportedTargetingOptions();
-    while(feedItem = feedProvider.next()) {
-      var targetingOptionsRequest = that.dvdao.buildBulkListLineItemAssignedTargetingOptionsRequest(
-        feedItem['Advertiser ID'], feedItem['Line Item ID'], supportedTargeting);
-      targetingOptionsRequests.push(targetingOptionsRequest);
-    }
-    return targetingOptionsRequests;
-  }
-
-  /**
    * Builds the bulk edit line item assigned targeting options
    * requests that will contain all the supported targeting
    * options in a sigle request.
@@ -296,7 +267,6 @@ var LineItemLoader = function(dvDAO) {
    * Params:
    *  feedProvider: The feed provider that contains all the items in
    *  the QA tab.
-   *  lineItemsMap: A map containing each line item object under its own key.
    *  advertisersMap: A map containing each advertiser object under its own key.
    *  This map contains full targeting options lists to compare with new assigned
    *  targeting options for the line items.
@@ -304,13 +274,11 @@ var LineItemLoader = function(dvDAO) {
    * Returns:
    *  A list of bulk edit requests.
    */
-  function getBulkEditLineItemAssignedTargetingOptionsRequests(feedProvider, lineItemsMap,
-   advertisersMap) {
+  function getBulkEditLineItemAssignedTargetingOptionsRequests(feedProvider, advertisersMap) {
     var bulkEditRequests = [];
     while(feedItem = feedProvider.next()) {
-      lineItem = lineItemsMap[feedItem["Line Item ID"]];
       var bulkCreateTOPayload = getTargetingOptionsBuilder().buildNewAssignedTargetingOptionsPayload(
-        lineItem, feedItem, advertisersMap);
+        feedItem, advertisersMap);
       var bulkEditRequest = dvDAO.buildBulkEditLineItemAssignedTargetingOptionsRequest(
         feedItem['Advertiser ID'], feedItem["Line Item ID"], bulkCreateTOPayload);
       bulkEditRequests.push(bulkEditRequest);

@@ -52,23 +52,23 @@ var QA = function() {
     forEachLineItem(hierarchy, function(insertionOrder, lineItem) {
       var feedItem = {};
       if(insertionOrder) {
-        feedItem['Advertiser ID'] = insertionOrder.advertiserId;
-        feedItem['Insertion Order ID'] = insertionOrder.insertionOrderId;
-        feedItem['Insertion Order Name'] = insertionOrder.displayName;
+        feedItem[constants.ADVERTISER_ID_HEADER] = insertionOrder.advertiserId;
+        feedItem[constants.INSERTION_ORDER_ID_HEADER] = insertionOrder.insertionOrderId;
+        feedItem[constants.INSERTION_ORDER_NAME] = insertionOrder.displayName;
       }
       if(lineItem) {
-        feedItem['Line Item ID'] = lineItem.lineItemId;
-        feedItem['Line Item Name'] = lineItem.displayName;
+        feedItem[constants.LINE_ITEM_ID_HEADER] = lineItem.lineItemId;
+        feedItem[constants.LINE_ITEM_NAME_HEADER] = lineItem.displayName;
         if(lineItem.targetingOptions) {
           if( lineItem.targetingOptions.keywordTargeting) {
-            feedItem['Keyword Exclusions'] = lineItem.targetingOptions.keywordTargeting.keywordExclusions.join(',');
-            feedItem['Keyword Inclusions'] = lineItem.targetingOptions.keywordTargeting.keywordInclusions.join(',');
+            feedItem[constants.ORIGINAL_KEYWORD_EXCLUSIONS_HEADER] = lineItem.targetingOptions.keywordTargeting.keywordExclusions.join(',');
+            feedItem[constants.ORIGINAL_KEYWORD_INCLUSIONS_HEADER] = lineItem.targetingOptions.keywordTargeting.keywordInclusions.join(',');
           }
           if(lineItem.targetingOptions.sensitiveCategoryTargeting) {
-            feedItem['Sensitive Category Exclusions'] = lineItem.targetingOptions.sensitiveCategoryTargeting.join(',');
+            feedItem[constants.ORIGINAL_SENSITIVE_CATEGORIES_HEADER] = lineItem.targetingOptions.sensitiveCategoryTargeting.join(',');
           }
         }
-        feedItem['Status'] = "LOADED";
+        feedItem[constants.STATUS_HEADER] = constants.STATUS_LOADED;
       }
       result.push(feedItem);
     });

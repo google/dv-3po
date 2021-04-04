@@ -240,7 +240,7 @@ var DVDAO = function() {
   fields = ["lineItemId", "name", "displayName", "lineItemType", "insertionOrderId", "advertiserId", "campaignId"]) {
     var result = [];
     var apiUrl = "/advertisers/" + advertiserId + "/lineItems?filter=insertionOrderId=" + insertionOrderId
-    + "&fields=lineItems(" + fields.join(",") + ")";
+    + "&fields=lineItems(" + fields.join(",") + "),nextPageToken";
     var response = apiCall(apiUrl);
 
     while(response && response.lineItems && response.lineItems.length > 0) {
