@@ -69,7 +69,7 @@ var BrandSafetyControlsConfigurationService = function () {
         var lineItemsToModify = config[constants.LI_TO_MODIFY_KEY];
         if (modifyLineItem(lineItemsToModify, qaLineItem)) {
           if (config[constants.NEW_BS_ITEMS_TO_ADD_KEY].length > 0) {
-            var newBSItemsToAdd = missingItems(oldBSItems, config[constants.NEW_BS_ITEMS_TO_ADD_KEY]);
+            var newBSItemsToAdd = getUtils().missingItems(oldBSItems, config[constants.NEW_BS_ITEMS_TO_ADD_KEY]);
             let uniqueNewBSItemsToAdd = [...new Set(newBSItemsToAdd)];
             row[brandSafetyControlsType] = uniqueNewBSItemsToAdd.join(",");
             if(uniqueNewBSItemsToAdd.length > 0) {
@@ -85,25 +85,6 @@ var BrandSafetyControlsConfigurationService = function () {
   }
 
   /* PRIVATE METHODS */
-
-  /**
-   * Returns a list of items of list 2 that are not included in list 1
-   *
-   * Params:
-   *  list1: Array of strings
-   *  list2: Array of strings
-   *
-   * Returns: Array of strings of items in list 2 that are not included in list 1
-   */
-  function missingItems(list1, list2) {
-    var result = [];
-    list2.forEach(item => {
-      if (list1.indexOf(item) == -1) {
-          result.push(item);
-      }
-    });
-    return result;
-  }
 
   /**
     * Build the brand safety controls configuration template.

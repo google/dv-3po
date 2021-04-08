@@ -105,9 +105,12 @@ var TargetingOptionsBuilder = function () {
                 newAssignedTargetingOptions.push(newAssignedTargetingOption);
             }
         });
-        var payload = {
+        var payload;
+        if(validBSOptions(newAssignedTargetingOptions)) {
+          payload = {
             "createRequests": newAssignedTargetingOptions
-        };
+          };
+        }
         return payload;
     }
 

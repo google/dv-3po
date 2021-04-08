@@ -77,11 +77,11 @@ function pushToDV360() {
       return new Runner().run('pushToDV360', jobs);
     }).then(function(result) {
       // Log results
+      console.log("Logging pushToDV360 jobs...");
       console.log(result);
-      return getLogger().log(result)
-    }).then(function(result) {
       // Change status
       setStatus('The Brand Safety Controls have been pushed successfully! Please verify them in the UI.');
+      return getLogger().log(result)
     });
   }
 }

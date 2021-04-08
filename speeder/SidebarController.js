@@ -141,8 +141,8 @@ function _writeLogs(job) {
   var sheetDAO = new SheetDAO();
   var output = [];
 
-  job.offset = job.offset || 0;
-  var range = 'A' + (job.offset + 1) + ':B';
+  job.offset = job.offset || 1;
+  var range = 'A' + (job.offset + 1) + ':C';
 
   for(var i = 0; i < job.jobs.length && job.jobs[i].logs; i++) {
     var logs = job.jobs[i].logs;

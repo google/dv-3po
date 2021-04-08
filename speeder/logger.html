@@ -1,6 +1,6 @@
 <script>
 /*
- * Copyright 2019 Google Inc.
+ * Copyright 2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ var logger;
  * Logger
  */
 var Logger = function() {
-  var offset = 0;
+  var offset = 1;
 
   /**
    * Clears and resets the log, returns a promise
@@ -35,9 +35,9 @@ var Logger = function() {
    * returns: Promise
    */
   this.clear = function() {
-    offset = 0;
+    offset = 1;
 
-    return new Runner().run('clear', [{'sheetName': 'Log', 'range': 'A1:B'}]);
+    return new Runner().run('clear', [{'sheetName': 'Log', 'range': 'A2:C'}]);
   }
 
   /**

@@ -59,8 +59,8 @@ TemplateLoader.prototype = Object.create(BaseLoader.prototype);
  * Insertion order loader
  */
 var InsertionOrderLoader = function(dvDAO) {
-  this.tabName = 'QA';
-  this.keys = ['Advertiser ID', 'Insertion Order ID'];
+  this.tabName = constants.QA_TAB_NAME;
+  this.keys = [constants.ADVERTISER_ID_HEADER, constants.INSERTION_ORDER_ID_HEADER];
 
   BaseLoader.call(this, dvDAO);
 
@@ -80,7 +80,7 @@ var InsertionOrderLoader = function(dvDAO) {
 
     var feedItem = null;
     while(feedItem = feedProvider.next()) {
-      var io = dvDAO.getInsertionOrder(feedItem['Advertiser ID'], feedItem['Insertion Order ID']);
+      var io = dvDAO.getInsertionOrder(feedItem[constants.ADVERTISER_ID_HEADER], feedItem[constants.INSERTION_ORDER_ID_HEADER]);
 
       if(io) {
         job.itemsToLoad.push(io)
@@ -103,9 +103,9 @@ var InsertionOrderLoader = function(dvDAO) {
     forEach(job.itemsToLoad, function(index, insertionOrder) {
       var feedItem = {};
 
-      feedItem['Advertiser ID'] = insertionOrder.advertiserId;
-      feedItem['Insertion Order ID'] = insertionOrder.insertionOrderId;
-      feedItem['Insertion Order Name'] = insertionOrder.displayName;
+      feedItem[constants.ADVERTISER_ID_HEADER] = insertionOrder.advertiserId;
+      feedItem[constants.INSERTION_ORDER_ID_HEADER] = insertionOrder.insertionOrderId;
+      feedItem[constants.INSERTION_ORDER_NAME_HEADER] = insertionOrder.displayName;
 
       feed.push(feedItem);
     });
@@ -123,8 +123,8 @@ InsertionOrderLoader.prototype = Object.create(BaseLoader.prototype);
  */
 var LineItemLoader = function(dvDAO) {
   var that = this;
-  this.tabName = 'QA';
-  this.keys = ['Advertiser ID', 'Line Item ID'];
+  this.tabName = constants.QA_TAB_NAME;
+  this.keys = [constants.ADVERTISER_ID_HEADER, constants.LINE_ITEM_ID_HEADER];
 
   BaseLoader.call(this, dvDAO);
 
@@ -144,11 +144,15 @@ var LineItemLoader = function(dvDAO) {
     var feedItem = null;
     var advertisersMap = {};
     while(feedItem = feedProvider.next()) {
-      if(advertisersMap[feedItem['Advertiser ID']]) {
-        advertisersMap[feedItem['Advertiser ID']].add(feedItem['Insertion Order ID']);
-      } else {
-        advertisersMap[feedItem['Advertiser ID']] = new Set();
-        advertisersMap[feedItem['Advertiser ID']].add(feedItem['Insertion Order ID'])
+      var advertiserId = feedItem[constants.ADVERTISER_ID_HEADER];
+      var insertionOrderId = feedItem[constants.INSERTION_ORDER_ID_HEADER];
+      if(advertiserId && insertionOrderId) {
+        if(advertisersMap[advertiserId]) {
+          advertisersMap[advertiserId].add(insertionOrderId);
+        } else {
+          advertisersMap[advertiserId] = new Set();
+          advertisersMap[advertiserId].add(insertionOrderId);
+        }
       }
     }
     for(advertiserKey in advertisersMap) {
@@ -157,9 +161,10 @@ var LineItemLoader = function(dvDAO) {
         var lineItems = dvDAO.listLineItems(advertiserKey, insertionOrder);
         var lineItemsMap = buildHelperLoaderMapListAction(lineItems, "lineItemId");
         var origTargetingOptionsRequests = getLineItemAssignedTargetingOptionsRequests(lineItems, advertiserKey);
-        var originalTargetingOptions = dvDAO.executeAll(origTargetingOptionsRequests);
-        getTargetingOptionsBuilder().assignTargetingOptionsToLineItems(lineItemsMap, originalTargetingOptions);
+        var responses = dvDAO.executeAll(origTargetingOptionsRequests);
+        getTargetingOptionsBuilder().assignTargetingOptionsToLineItems(lineItemsMap, responses.success);
         job.itemsToLoad = job.itemsToLoad.concat(lineItems);
+        logExecution(responses, origTargetingOptionsRequests, constants.LOAD_FROM_DV360_ERROR_KEY);
       });
     }
     return job;
@@ -207,7 +212,7 @@ var LineItemLoader = function(dvDAO) {
   /**
    * Performs a DV360 push.
    */
-  this.pushToDV360 = function() {
+  this.pushToDV360 = function(job) {
     var feedProvider = new FeedProvider(this.tabName, this.keys).load();
     var mapHelpers = buildHelperLoaderMapBulkEditAction(feedProvider);
     var advertisersMap = mapHelpers.advertisersMap;
@@ -215,7 +220,24 @@ var LineItemLoader = function(dvDAO) {
     var bulkEditTORequests = getBulkEditLineItemAssignedTargetingOptionsRequests(
       feedProvider, advertisersMap);
     var responses = dvDAO.executeAll(bulkEditTORequests);
-    return `Successful reponses BATCH API length -> ${responses.length}`
+    logExecution(responses, bulkEditTORequests, constants.PUSH_TO_DV360_ERROR_KEY);
+    return job;
+  }
+
+  /**
+   * Process errors after batch API execution.
+   *
+   * Params:
+   *  responses: The list of responses retrieved by the batch API.
+   *  requests: The list of requests sent to the API.
+   *  errorType: A string representing the error type that will be logged.
+   */
+  function logExecution(responses, requests, errorType) {
+    this.sheetDAO.clear(constants.ERRORS_TAB_NAME, constants.ERRORS_TAB_RANGE);
+    this.sheetDAO.clear(constants.LOGS_TAB_NAME, constants.LOGS_TAB_RANGE);
+    if(responses.errors.length > 0) {
+      getBrandSafetyErrorHandler().processErrors(responses, requests, errorType);
+    }
   }
 
   /**
@@ -235,8 +257,8 @@ var LineItemLoader = function(dvDAO) {
     var advertisersMap = {};
     var lineItemsMap = {};
     while(feedItem = feedProvider.next()) {
-      advertisersMap[feedItem['Advertiser ID']] = {};
-      lineItemsMap[feedItem['Line Item ID']] = {
+      advertisersMap[feedItem[constants.ADVERTISER_ID_HEADER]] = {};
+      lineItemsMap[feedItem[constants.LINE_ITEM_ID_HEADER]] = {
         "targetingOptions": getTargetingOptionsBuilder().buildTargetingOptionsForLineItems()
       };
     }
@@ -244,7 +266,7 @@ var LineItemLoader = function(dvDAO) {
       advertiser = advertisersMap[advertiserKey];
       var allSensitiveCategoriesMap = {};
       var allSensitiveCategories = dvDAO.listAllTargetingOptions(advertiserKey,
-      'TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION');
+      constants.TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION);
       if(allSensitiveCategories.targetingOptions) {
         allSensitiveCategories.targetingOptions.forEach(function(sensitiveCategory) {
           var key = sensitiveCategory.sensitiveCategoryDetails.sensitiveCategory;
@@ -279,9 +301,11 @@ var LineItemLoader = function(dvDAO) {
     while(feedItem = feedProvider.next()) {
       var bulkCreateTOPayload = getTargetingOptionsBuilder().buildNewAssignedTargetingOptionsPayload(
         feedItem, advertisersMap);
-      var bulkEditRequest = dvDAO.buildBulkEditLineItemAssignedTargetingOptionsRequest(
-        feedItem['Advertiser ID'], feedItem["Line Item ID"], bulkCreateTOPayload);
-      bulkEditRequests.push(bulkEditRequest);
+      if(bulkCreateTOPayload) {
+        var bulkEditRequest = dvDAO.buildBulkEditLineItemAssignedTargetingOptionsRequest(
+          feedItem[constants.ADVERTISER_ID_HEADER], feedItem[constants.LINE_ITEM_ID_HEADER], bulkCreateTOPayload);
+        bulkEditRequests.push(bulkEditRequest);
+      }
     }
     return bulkEditRequests;
   }
@@ -299,9 +323,9 @@ var LineItemLoader = function(dvDAO) {
     forEach(job.itemsToLoad, function(index, insertionOrder) {
       var feedItem = {};
 
-      feedItem['Advertiser ID'] = insertionOrder.advertiserId;
-      feedItem['Insertion Order ID'] = insertionOrder.insertionOrderId;
-      feedItem['Insertion Order Name'] = insertionOrder.displayName;
+      feedItem[constants.ADVERTISER_ID_HEADER] = insertionOrder.advertiserId;
+      feedItem[constants.INSERTION_ORDER_ID_HEADER] = insertionOrder.insertionOrderId;
+      feedItem[constants.INSERTION_ORDER_NAME_HEADER] = insertionOrder.displayName;
 
       feed.push(feedItem);
     });

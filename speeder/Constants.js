@@ -20,7 +20,7 @@ var constants = {
   "LINE_ITEM_NAME_HEADER": "Line Item Name",
   "ADVERTISER_ID_HEADER": 'Advertiser ID',
   "INSERTION_ORDER_ID_HEADER": "Insertion Order ID",
-  "INSERTION_ORDER_NAME": "Insertion Order Name",
+  "INSERTION_ORDER_NAME_HEADER": "Insertion Order Name",
   "KEYWORD_INCLUSIONS_HEADER": "Keyword Inclusions",
   "KEYWORD_EXCLUSIONS_HEADER": "Keyword Exclusions",
   "SENSITIVE_CATEGORIES_HEADER": "Sensitive Category Exclusions",
@@ -31,6 +31,8 @@ var constants = {
   "STATUS_HEADER": "Status",
   "BRAND_SAFETY_CONTROL_HEADER": "Brand Safety Control",
   "ENABLED_HEADER": "Enabled",
+  "ERROR_CODE_HEADER": "Error Code",
+  "ERROR_MESSAGE_HEADER": "Error Message",
   // Status
   "STATUS_UNCHANGED" : "UNCHANGED",
   "STATUS_MODIFIED" : `%s MODIFIED`,
@@ -40,11 +42,22 @@ var constants = {
   "LI_KEYWORD_EXCLUSIONS_TAB_NAME" : "Line Items For Keyword Exclusions",
   "LI_SENSITIVE_CATEGORY_EXCLUSIONS_TAB_NAME" : "Line Items For Sensitive Category Exclusions",
   "BS_CONFIG_TAB_NAME": "BS Config",
+  "QA_TAB_NAME": "QA",
+  "LOGS_TAB_NAME": "Log",
+  "ERRORS_TAB_NAME": "Errors",
   // Keys
   "LI_TO_MODIFY_KEY" : "lineItemsToModify",
   "LI_TO_MODIFY_TAB_NAME_KEY" : "lineItemsToModifyTabName",
   "NEW_BS_ITEMS_TO_ADD_KEY" : "newBSItemsToAdd",
+  "PUSH_TO_DV360_ERROR_KEY": "PUSH_TO_DV360_ERROR",
+  "LOAD_FROM_DV360_ERROR_KEY": "LOAD_FROM_DV360_ERROR",
   // Targeting Types
   "TARGETING_TYPE_KEYWORD" : "TARGETING_TYPE_KEYWORD",
-  "TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION" : "TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION", 
+  "TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION" : "TARGETING_TYPE_SENSITIVE_CATEGORY_EXCLUSION",
+  // Errors
+  "PUSH_TO_DV360_ERROR": "Failed to push to DV360. Please reprocess the row.",
+  "LOAD_FROM_DV360_ERROR": "Failed to load from DV360. Please reprocess the row.",
+  // Ranges
+  "LOGS_TAB_RANGE": "A2:C",
+  "ERRORS_TAB_RANGE": "A2:C"
 };

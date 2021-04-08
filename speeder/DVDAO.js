@@ -80,7 +80,8 @@ var DVDAO = function() {
    */
   function batchAPICall(requests) {
     var batches = createBatches(requests);
-    var responses = [];
+    var successResponses = [];
+    var errorResponses = [];
     batches.forEach(innerRequests => {
       var boundary = "xxxxxxxxxx";
       var data = buildInnerRequests(innerRequests, boundary);
@@ -97,12 +98,12 @@ var DVDAO = function() {
         throw "Error calling the batch API" + response.getContentText();
       }
       var parsedResponse = parseBatchResponse(response.getContentText());
-      responses = responses.concat(parsedResponse.success);
-      var errors = parsedResponse.errors; // TODO: Handle error retry
+      successResponses = successResponses.concat(parsedResponse.success);
+      errorResponses = errorResponses.concat(parsedResponse.errors);
       console.log("Successful reponses BATCH API length -> " + parsedResponse.success.length);
       console.log("Errors BATCH API length -> " + parsedResponse.errors.length);
     });
-    return responses;
+    return { "success" : successResponses, "errors" : errorResponses };
   }
 
   /**
@@ -143,7 +144,7 @@ var DVDAO = function() {
    */
   function createBatches(array) {
     var tempArray;
-    var limit = 1000;
+    var limit = 500;
     var batches = [];
     for (var i = 0, j = array.length; i < j; i += limit) {
         tempArray = array.slice(i, (i + limit));
