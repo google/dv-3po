@@ -179,4 +179,70 @@ function errorHandler(param) {
   setStatus('There was an error while applying the Brand Safety Controls.');
 }
 
+/**
+ * Executes the underwriter budget and date validation
+ */
+function underwriter() {
+  setStatus('Reading underwriter segments');
+
+  var jobs = [{
+    'entity': 'Underwriter'
+  }];
+
+  new Runner().run('load', jobs)
+    .then(jobs => {
+      console.log(jobs);
+      setStatus('Ready');
+    }).catch(error => {
+      console.log(error);
+      setStatus('An Error happened!');
+    });
+
+}
+
+/**
+ * Loads reports from DV360 based on configurations in the Reports tab
+ */
+function loadReports() {
+  setStatus('Loading ...');
+
+  var job = {
+    'entity': 'Reports'
+  }
+
+  new Runner().run('identifyItemsToLoad', [job]).then(jobs => {
+    var loadJobs = [];
+
+    jobs.forEach(job => loadJobs = loadJobs.concat(job.jobs));
+
+    return new Runner().run('load', loadJobs);
+  }).then(jobs => {
+    setStatus('Ready');
+  }).catch(error => {
+    console.log(error);
+    setStatus('An error happened');
+  });
+
+}
+
+/**
+ * Based on the data in the report tab, schedule the report triggers to pull
+ * reports automatically on a daily basis
+ */
+function scheduleReportTriggers() {
+  setStatus('Creating Triggers ...');
+
+  var job = {
+    'entity': 'Reports'
+  }
+
+  new Runner().run('scheduleReportTriggers', [job]).then(jobs => {
+    setStatus('Ready');
+  }).catch(error => {
+    console.log(error);
+    setStatus('An error happened');
+  });
+}
+
+
 </script>

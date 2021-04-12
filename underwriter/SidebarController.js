@@ -101,6 +101,48 @@ function writeLogs(job) {
 }
 
 /**
+ * Identifies items to load for a given entity
+ *
+ * params: job.entity name of the entity to identify
+ *
+ * returns: job.jobs is populated with the list of jobs to run
+ */
+function _identifyItemsToLoad(job) {
+  return getLoader(job.entity).identifyItemsToLoad(job);
+}
+function identifyItemsToLoad(job) {
+  return _invoke('_identifyItemsToLoad', job);
+}
+
+/**
+ * Identifies items to load for a given entity
+ *
+ * params: job.entity name of the entity to identify
+ *
+ * returns: job.jobs is populated with the list of jobs to run
+ */
+function _load(job) {
+  return getLoader(job.entity).load(job);
+}
+function load(job) {
+  return _invoke('_load', job);
+}
+
+/**
+ * Identifies items to load for a given entity
+ *
+ * params: job.entity name of the entity to identify
+ *
+ * returns: job.jobs is populated with the list of jobs to run
+ */
+function _scheduleReportTriggers(job) {
+  return getLoader(job.entity).scheduleReportTriggers(job);
+}
+function scheduleReportTriggers(job) {
+  return _invoke('_scheduleReportTriggers', job);
+}
+
+/**
  * Function that safely tries to parse an input as a JSON object, if it fails it
  * doesn't throw an excaption, rather it just returns the input
  *

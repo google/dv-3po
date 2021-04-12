@@ -19,12 +19,20 @@ var constants = {
   "UNDERWRITER_TAB": "Underwriter",
   "VALIDATION_TAB": "Validation",
   "VALIDATION_TAB_RANGE": "A1:B",
+  "REPORT_CLEAR_RANGE": "A1:AZ",
 
-  // Headers
+  // Entities
+  "REPORT_ENTITY": 'Reports',
+
+  // Sheet Headers
   "ADVERTISER_ID_HEADER": "Advertiser ID",
   "CREDIT_START_DATE_HEADER": "Credit Start Date",
   "CREDIT_END_DATE_HEADER": "Credit End Date",
   "CREDIT_HEADER": "Credit",
+  "REPORT_ID_HEADER": "Report ID",
+  "TARGET_TAB_HEADER": "Target Tab",
+  "RUN_AT_HEADER": "Run At",
+  "TRIGGER_ID_HEADER": "Trigger ID",
 
   // Internal fields
   "PARSED_SEGMENTS_FIELD": "Parsed Segments",
@@ -55,14 +63,18 @@ var constants = {
   // Endpoints
   "BASE_API_URL": "https://displayvideo.googleapis.com/v1",
   "CONTENT_API_URL": "https://displayvideo.googleapis.com/download/",
+  "REPORTING_API_URL": "https://www.googleapis.com/doubleclickbidmanager/v1.1",
   "ENDPOINT_SDF_DOWNLOAD": "/sdfdownloadtasks/",
 
-  // Headers
+  // HTTP Headers
   "AUTHORIZATION_HEADER": "Authorization",
   "CONTENT_TYPE_HEADER": "Content-Type",
   "CONTENT_TYPE_JSON": "application/json",
   "CONTENT_TYPE_ZIP": "application/zip",
   "ENDPOINT_ADVERTISER": "/advertisers/",
   "ENDPOINT_LINE_ITEM": "/lineItems/",
-  "ENDPOINT_INSERTION_ORDER": "/insertionOrders/"
+  "ENDPOINT_INSERTION_ORDER": "/insertionOrders/",
+
+  // Triggers
+  "PULL_REPORT_TRIGGER_FUNCTION": "pullReportTrigger"
 };

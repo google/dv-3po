@@ -251,7 +251,7 @@ var Underwriter = function() {
 
     logMessages = logMessages.concat(dateErrors).concat(budgetErrors);
 
-    getSheetDAO().setValues(constants.VALIDATION_TAB, constants.VALIDATION_TAB_RANGE
-        + logMessages.length, logMessages);
+    getSheetDAO().setValues(constants.VALIDATION_TAB,
+        constants.VALIDATION_TAB_RANGE + logMessages.length, logMessages);
   }
 }

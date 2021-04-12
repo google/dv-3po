@@ -15,9 +15,25 @@
  */
 
 var constants = {
+  // Endpoints
+  "BASE_API_URL": "https://displayvideo.googleapis.com/v1",
+  "CONTENT_API_URL": "https://displayvideo.googleapis.com/download/",
+  "REPORTING_API_URL": "https://www.googleapis.com/doubleclickbidmanager/v1.1",
+  "ENDPOINT_SDF_DOWNLOAD": "/sdfdownloadtasks/",
+  "ENDPOINT_ADVERTISER": "/advertisers/",
+  "ENDPOINT_LINE_ITEM": "/lineItems/",
+  "ENDPOINT_INSERTION_ORDER": "/insertionOrders/",
+
   // Field names
+  "CREDIT_END_DATE_HEADER": "Credit End Date",
+  "CREDIT_HEADER": "Credit",
+  "REPORT_ID_HEADER": "Report ID",
+  "TARGET_TAB_HEADER": "Target Tab",
+  "RUN_AT_HEADER": "Run At",
+  "TRIGGER_ID_HEADER": "Trigger ID",
   "LINE_ITEM_ID_HEADER" : "Line Item ID",
   "LINE_ITEM_NAME_HEADER": "Line Item Name",
+  "PARTNER_ID_HEADER": 'Partner ID',
   "ADVERTISER_ID_HEADER": 'Advertiser ID',
   "INSERTION_ORDER_ID_HEADER": "Insertion Order ID",
   "INSERTION_ORDER_NAME_HEADER": "Insertion Order Name",
@@ -43,11 +59,13 @@ var constants = {
   "TRACKING_PLACEMENT_ID_HEADER": "Tracking Placement ID",
   "TRACKING_AD_ID_HEADER": "Tracking Ad ID",
   "TRACKING_CREATIVE_ID_HEADER": "Tracking Creative ID",
+  "CREDIT_START_DATE_HEADER": "Credit Start Date",
   // Status
   "STATUS_UNCHANGED" : "UNCHANGED",
   "STATUS_MODIFIED" : `%s MODIFIED`,
   "STATUS_LOADED": "LOADED",
   // Tab Names
+  "UNDERWRITER_TAB": "Underwriter",
   "LI_KEYWORD_INCLUSIONS_TAB_NAME" : "Line Items For Keyword Inclusions",
   "LI_KEYWORD_EXCLUSIONS_TAB_NAME" : "Line Items For Keyword Exclusions",
   "LI_SENSITIVE_CATEGORY_EXCLUSIONS_TAB_NAME" : "Line Items For Sensitive Category Exclusions",
@@ -68,7 +86,9 @@ var constants = {
   "PUSH_TO_DV360_ERROR": "Failed to push to DV360. Please reprocess the row.",
   "LOAD_FROM_DV360_ERROR": "Failed to load from DV360. Please reprocess the row.",
   // Ranges
+  "REPORT_CLEAR_RANGE": "A1:AZ",
   "LOGS_TAB_RANGE": "A2:C",
+  "VALIDATION_TAB_RANGE": "A1:B",
   "SDF_VERSION": "SDF_VERSION_5_2",
   "ERRORS_TAB_RANGE": "A2:C",
   // Default sleep in seconds to wait before retrying a retriable error
@@ -81,5 +101,41 @@ var constants = {
       'user rate limit exceeded',
       'quota exceeded'
   ],
-  "SDF_VERSION": "SDF_VERSION_5_2"
+
+  // Triggers
+  "PULL_REPORT_TRIGGER_FUNCTION": "pullReportTrigger",
+
+  // Entities
+  "REPORT_ENTITY": 'Reports',
+
+  // Internal fields
+  "PARSED_SEGMENTS_FIELD": "Parsed Segments",
+
+  // API fields
+  "ADVERTISER_ID_API": "advertiserId",
+  "END_DATE_API": "endDate",
+  "START_DATE_API": "startDate",
+  "BUDGET_API": "budget",
+  "IO_ID_API": "ioId",
+  "CAMPAIGN_ID_API": "campaignId",
+  "IO_IDS_API": "insertionOrderIds",
+  "FILTER_API": "filter",
+  "PAGE_TOKEN_API": "pageToken",
+  "ALT_PARAM": "?alt=media",
+
+  // SDF Fields
+  "IO_ID_SDF": "Io Id",
+  "BUDGET_SEGMENTS_SDF": "Budget Segments",
+  "ADVERTISER_ID_SDF": "Advertiser ID",
+
+  // Logging and formatting
+  "DATE_FORMAT": "yyyy-MM-dd",
+  "LOG_LEVEL_ERROR": "ERROR",
+  "LOG_LEVEL_SUMMARY": "SUMMARY",
+
+  // HTTP Headers
+  "AUTHORIZATION_HEADER": "Authorization",
+  "CONTENT_TYPE_HEADER": "Content-Type",
+  "CONTENT_TYPE_JSON": "application/json",
+  "CONTENT_TYPE_ZIP": "application/zip"
 };

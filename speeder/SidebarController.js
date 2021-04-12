@@ -221,6 +221,38 @@ function writeLogs(job) {
 }
 
 /**
+ * Performs a load
+ *
+ * params: job object, specific to the loader to be called
+ *
+ * returns: The job object
+ */
+function _load(job) {
+  var loader = getLoader(job.entity);
+
+  return loader.load(job);
+
+  return job;
+}
+function load(job) {
+  return _invoke('_load', job);
+}
+
+/**
+ * Identifies items to load for a given entity
+ *
+ * params: job.entity name of the entity to identify
+ *
+ * returns: job.jobs is populated with the list of jobs to run
+ */
+function _scheduleReportTriggers(job) {
+  return getLoader(job.entity).scheduleReportTriggers(job);
+}
+function scheduleReportTriggers(job) {
+  return _invoke('_scheduleReportTriggers', job);
+}
+
+/**
  * Function that safely tries to parse an input as a JSON object, if it fails it
  * doesn't throw an excaption, rather it just returns the input
  *

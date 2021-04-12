@@ -95,4 +95,39 @@ var DVManager = function() {
     return activity;
   }
 
+  /**
+   * Returns all IOs under an advertiser or campaign
+   *
+   * params:
+   *  advertiserId: Integer, the advertiser ID
+   *  campaignId: Optional, the campaign ID, if not provided all IOs under the
+   *  advertiser are returned
+   *
+   * returns: List of IOs that matched the criteria
+   */
+  this.getIOs = function(advertiserId, campaignId) {
+    var filter = null;
+    var ios = [];
+
+    if(campaignId) {
+      filter = `${constants.CAMPAIGN_ID_API}=${campaignId}`;
+    }
+
+    var page = dao.listInsertionOrders(advertiserId, filter);
+
+    while(page && page.insertionOrders.length > 0) {
+      ios = ios.concat(page.insertionOrders);
+
+      if(page.nextPageToken) {
+        page = dao.listInsertionOrders(advertiserId, filter,
+            page.nextPageToken);
+      } else {
+        page = null;
+      }
+    }
+
+    return ios;
+  }
+
+
 }

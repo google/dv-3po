@@ -24,12 +24,8 @@
  */
 var DVDAO = function() {
 
-  const BASE_API_URL = "https://displayvideo.googleapis.com/v1";
-  const BASE_BATCH_API_URL = "https://displayvideo.googleapis.com/batch";
-  const CONTENT_API_URL = "https://displayvideo.googleapis.com/download/";
-
-  function apiCall(urlSuffix, options) {
-    var url = BASE_API_URL + urlSuffix;
+  function apiCall(urlSuffix, options, baseApiUrl=constants.BASE_API_URL) {
+    var url = baseApiUrl + urlSuffix;
 
     if(!options) {
       options = {};
@@ -39,8 +35,10 @@ var DVDAO = function() {
       options.headers = {};
     }
 
-    options.headers['Authorization'] = "Bearer " + ScriptApp.getOAuthToken();
-    options.headers['Content-Type'] = "application/json";
+    options.muteHttpExceptions = true;
+
+    options.headers[constants.AUTHORIZATION_HEADER] = "Bearer " + ScriptApp.getOAuthToken();
+    options.headers[constants.CONTENT_TYPE_HEADER] = constants.CONTENT_TYPE_JSON;
 
     var response = UrlFetchApp.fetch(url, options);
 
@@ -90,7 +88,7 @@ var DVDAO = function() {
         headers: { 'Authorization': 'Bearer ' + ScriptApp.getOAuthToken() },
         muteHttpExceptions: true,
       };
-      var response = UrlFetchApp.fetch(BASE_BATCH_API_URL, options);
+      var response = UrlFetchApp.fetch(constants.BASE_BATCH_API_URL, options);
       if(response.getResponseCode() != 200) {
         throw "Error calling the batch API" + response.getContentText();
       }
@@ -201,12 +199,46 @@ var DVDAO = function() {
    *  A request object specified by the API.
    */
   function buildRequest (method, urlSuffix, payload) {
-    var url = BASE_API_URL + urlSuffix;
+    var url = constants.BASE_API_URL + urlSuffix;
     return {
       method: method,
       url: url,
       payload: payload
     }
+  }
+
+  /**
+   * Lists all advertisers under a partner
+   *
+   * params:
+   *  partnerId: Partner ID
+   *  fields - default param: A list of fields to be retrieved by the API.
+   *
+   * returns:
+   *  List of advertisers in the partner
+   */
+  this.listAdvertisers = function(partnerId,
+      fields = ["advertiserId", "name"]) {
+
+    var result = [];
+
+    var apiUrl = `/advertisers?partnerId=${partnerId}&fields=advertisers(${fields.join(",")}),nextPageToken`;
+
+    var response = apiCall(apiUrl);
+
+    // TODO: Make the process of fetching all pages optional, and in a
+    // centralized place
+    while(response && response.advertisers && response.advertisers.length > 0) {
+      result = result.concat(response.advertisers);
+
+      if(response.nextPageToken) {
+        response = apiCall(apiUrl + '&pageToken=' + response.nextPageToken);
+      } else {
+        response = {};
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -234,15 +266,51 @@ var DVDAO = function() {
    * returns:
    *  List of line items under the specified insertion order
    */
-  this.listLineItems = function(advertiserId, insertionOrderId, 
-  fields = ["lineItemId", "name", "displayName", "lineItemType", "insertionOrderId", "advertiserId", "campaignId"]) {
+  this.listLineItems = function(advertiserId, insertionOrderId,
+      fields = ["lineItemId", "name", "displayName", "lineItemType",
+        "insertionOrderId", "advertiserId", "campaignId"]) {
     var result = [];
     var apiUrl = "/advertisers/" + advertiserId + "/lineItems?filter=insertionOrderId=" + insertionOrderId
     + "&fields=lineItems(" + fields.join(",") + "),nextPageToken";
     var response = apiCall(apiUrl);
 
+    // TODO: Make the process of fetching all pages optional, and in a
+    // centralized place
     while(response && response.lineItems && response.lineItems.length > 0) {
       result = result.concat(response.lineItems);
+
+      if(response.nextPageToken) {
+        response = apiCall(apiUrl + '&pageToken=' + response.nextPageToken);
+      } else {
+        response = {};
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Lists all Insertion Orders under a specific advertiser
+   *
+   * params:
+   *  advertiserId: Advertiser ID
+   *  fields - default param: A list of fields to be retrieved by the API.
+   *
+   * returns:
+   *  List of Insertion Orders
+   */
+  this.listInsertionOrders = function(advertiserId, insertionOrderId,
+      fields = ["insertionOrderId", "name", "advertiserId", "budget"]) {
+
+    var result = [];
+    var apiUrl = `/advertisers/${advertiserId}/insertionOrders?fields=insertionOrders(${fields.join(",")}),nextPageToken`;
+
+    var response = apiCall(apiUrl);
+
+    // TODO: Make the process of fetching all pages optional, and in a
+    // centralized place
+    while(response && response.insertionOrders && response.insertionOrders.length > 0) {
+      result = result.concat(response.insertionOrders);
 
       if(response.nextPageToken) {
         response = apiCall(apiUrl + '&pageToken=' + response.nextPageToken);
@@ -410,7 +478,6 @@ var DVDAO = function() {
       body.parentEntityFilter = parentEntityFilter;
     }
 
-    console.log(body);
     return apiCall(endpoint, {
       "method": "post",
       "payload": JSON.stringify(body)
@@ -442,7 +509,7 @@ var DVDAO = function() {
   this.downloadSDF = function(task) {
     var endpoint = task.response.resourceName + "?alt=media";
 
-    var url =  CONTENT_API_URL + endpoint;
+    var url =  constants.CONTENT_API_URL + endpoint;
 
     var options = {
       'headers': {
@@ -465,6 +532,43 @@ var DVDAO = function() {
     return Utilities.unzip(content);
   }
 
+  /**
+   * Fetches a report definition from DV360
+   *
+   * params: reportId the id of the report
+   *
+   * returns: API representation of the report definition
+   */
+  this.getReport = function(reportId) {
+    return apiCall(`/query/${reportId}`, {}, constants.REPORTING_API_URL);
+  }
+
+  /**
+   * Returns the latest report file available for a given DV360 report, if the
+   * report has not been run it returns null
+   *
+   * parmas:
+   *  repoort: object representing the report definition from the DV360 api
+   *
+   * returns: Report data
+   */
+  this.getLatestReportFile = function(report) {
+    if(report.metadata.googleCloudStoragePathForLatestReport) {
+      var options = {};
+      options.muteHttpExceptions = true;
+
+      var response = UrlFetchApp.fetch(
+          report.metadata.googleCloudStoragePathForLatestReport, options);
+
+      if(response.getResponseCode() != 200) {
+        throw "Error fetching report " + response.getContentText();
+      }
+
+      return response.getContentText();
+    }
+
+    return null;
+  }
 }
 
 /**

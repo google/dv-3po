@@ -41,6 +41,49 @@ function underwriter() {
   });
 }
 
+function loadReports() {
+  setStatus('Loading ...');
+
+  var job = {
+    'entity': 'Reports'
+  }
+
+  new Runner().run('identifyItemsToLoad', [job]).then(jobs => {
+    var loadJobs = [];
+
+    jobs.forEach(job => loadJobs = loadJobs.concat(job.jobs));
+
+    console.log(jobs);
+
+    return new Runner().run('load', loadJobs);
+  }).then(jobs => {
+    setStatus('Ready');
+  }).catch(error => {
+    console.log(error);
+    setStatus('An error happened');
+  });
+
+}
+
+/**
+ * Based on the data in the report tab, schedule the report triggers to pull
+ * reports automatically on a daily basis
+ */
+function scheduleReportTriggers() {
+  setStatus('Creating Triggers ...');
+
+  var job = {
+    'entity': 'Reports'
+  }
+
+  new Runner().run('scheduleReportTriggers', [job]).then(jobs => {
+    setStatus('Ready');
+  }).catch(error => {
+    console.log(error);
+    setStatus('An error happened');
+  });
+}
+
 /**
  * Clears the feed
  */

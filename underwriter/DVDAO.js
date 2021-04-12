@@ -24,8 +24,8 @@
  */
 var DVDAO = function() {
 
-  function apiCall(urlSuffix, options) {
-    var url = constants.BASE_API_URL + urlSuffix;
+  function apiCall(urlSuffix, options, baseApiUrl=constants.BASE_API_URL) {
+    var url = baseApiUrl + urlSuffix;
 
     if(!options) {
       options = {};
@@ -35,9 +35,7 @@ var DVDAO = function() {
       options.headers = {};
     }
 
-    // For testing only
     options.muteHttpExceptions = true;
-    // ----
 
     options.headers[constants.AUTHORIZATION_HEADER] = "Bearer " + ScriptApp.getOAuthToken();
     options.headers[constants.CONTENT_TYPE_HEADER] = constants.CONTENT_TYPE_JSON;
@@ -63,7 +61,6 @@ var DVDAO = function() {
 
     if(filter) {
       endpoint += separator + `${constants.FILTER_API}=` + filter;
-
       separator = '&';
     }
 
@@ -134,6 +131,43 @@ var DVDAO = function() {
     return apiCall(constants.ENDPOINT_ADVERTISER + advertiserId);
   }
 
+  /**
+   * Fetches a report definition from DV360
+   *
+   * params: reportId the id of the report
+   *
+   * returns: API representation of the report definition
+   */
+  this.getReport = function(reportId) {
+    return apiCall(`/query/${reportId}`, {}, constants.REPORTING_API_URL);
+  }
+
+  /**
+   * Returns the latest report file available for a given DV360 report, if the
+   * report has not been run it returns null
+   *
+   * parmas:
+   *  repoort: object representing the report definition from the DV360 api
+   *
+   * returns: Report data
+   */
+  this.getLatestReportFile = function(report) {
+    if(report.metadata.googleCloudStoragePathForLatestReport) {
+      var options = {};
+      options.muteHttpExceptions = true;
+
+      var response = UrlFetchApp.fetch(
+          report.metadata.googleCloudStoragePathForLatestReport, options);
+
+      if(response.getResponseCode() != 200) {
+        throw "Error fetching report " + response.getContentText();
+      }
+
+      return response.getContentText();
+    }
+
+    return null;
+  }
 }
 
 var dvDAO;
