@@ -33,6 +33,16 @@ var constants = {
   "ENABLED_HEADER": "Enabled",
   "ERROR_CODE_HEADER": "Error Code",
   "ERROR_MESSAGE_HEADER": "Error Message",
+  "AD_GROUP_ID_HEADER": "Ad Group ID",
+  "AD_GROUP_NAME_HEADER": "Ad Group Name",
+  "AD_ID_HEADER": "Ad ID",
+  "AD_NAME_HEADER": "Ad Name",
+  "PLACEMENT_NAME_HEADER": "Tracking Placement Name",
+  "TRACKING_AD_NAME_HEADER": "Tracking Ad Name",
+  "CREATIVE_NAME_HEADER": "Tracking Creative Name",
+  "TRACKING_PLACEMENT_ID_HEADER": "Tracking Placement ID",
+  "TRACKING_AD_ID_HEADER": "Tracking Ad ID",
+  "TRACKING_CREATIVE_ID_HEADER": "Tracking Creative ID",
   // Status
   "STATUS_UNCHANGED" : "UNCHANGED",
   "STATUS_MODIFIED" : `%s MODIFIED`,
@@ -59,5 +69,17 @@ var constants = {
   "LOAD_FROM_DV360_ERROR": "Failed to load from DV360. Please reprocess the row.",
   // Ranges
   "LOGS_TAB_RANGE": "A2:C",
-  "ERRORS_TAB_RANGE": "A2:C"
+  "ERRORS_TAB_RANGE": "A2:C",
+  "SDF_VERSION": "SDF_VERSION_5_2",
+  "ERRORS_TAB_RANGE": "A2:C",
+  // Default sleep in seconds to wait before retrying a retriable error
+  "DEFAULT_SLEEP": 8 * 1000,
+  // Default number of times to retry a retriable error
+  "DEFAULT_RETRIES": 4,
+  "RETRIABLE_ERROR_MESSAGES": [
+      'failed while accessing document with id',
+      'internal error',
+      'user rate limit exceeded',
+      'quota exceeded'
+  ]
 };

@@ -19,6 +19,7 @@
       font-family: courier,arial,helvetica;
     }
     .statusLabel {
+      font-family: courier,arial,helvetica;
       font-size: 18px;
     }
   </style>
@@ -32,11 +33,9 @@
   <b class="statusLabel">Status:</b> <span id='status'>Ready</span>
   <br />
   <br />
-  <button id='loadFromDV' onclick='loadFromDV()'>Load From DV360</button>
+  <button id='loadFromDV' onclick='sdfLoad()'>Load From DV360</button>
   <br />
-  <button id='applyBrandSafetyControls' onclick='applyBrandSafetyControlsConfiguration()'>Apply Brand Safety Controls</button>
-  <br />
-  <button id='pushToDV360' onclick='pushToDV360()'>Push To DV360</button>
+  <button id='clearFeed' onclick='clearFeed()'>Clear Feed</button>
   <br />
   <br />
   <?!= include('runner'); ?>

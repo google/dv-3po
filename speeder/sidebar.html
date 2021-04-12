@@ -87,6 +87,69 @@ function pushToDV360() {
 }
 
 /**
+ * Waits for all SDF Download tasks in the jobs to complete
+ *
+ * params: jobs.tasks tasks to check and wait for
+ */
+function waitForSDFTasksCompletion(jobs, wait=5000) {
+  return new Runner().run('refreshSDFTasks', jobs).then(jobs => {
+    var complete = true;
+
+    jobs.forEach(job => {
+      job.tasks.forEach(task => {
+        if(!task.done) {
+          complete = false;
+        }
+      });
+    });
+
+    if(complete) {
+      return jobs;
+    } else {
+      return new Promise(resolve => setTimeout(resolve, wait)).then(() => waitForSDFTasksCompletion(jobs, wait));
+    }
+  });
+}
+
+/**
+ * Loads data from DV using SDFs, which allows for read access to YouTube
+ * related entities
+ */
+function sdfLoad() {
+  setStatus('Loading from DV360');
+
+  var jobs = [{
+    'entity': 'InsertionOrder'
+  }];
+
+  new Runner().run('createSDFTasks', jobs)
+    .then(function(jobs) {
+      setStatus('Waiting for SDFs to be generated');
+      return waitForSDFTasksCompletion(jobs);
+    }).then(jobs => {
+      setStatus('Parsing SDFs and generating report');
+      return new Runner().run('sdfLoad', jobs);
+    }).then(jobs => {
+      setStatus('Ready');
+    }).catch(error => {
+      console.log(error);
+      setStatus('An Error happened!');
+    });
+}
+
+/**
+ * Clears the feed
+ */
+function clearFeed() {
+  setStatus('Clearing feed');
+
+  new Runner().run('clear', [{
+    'sheetName': 'QA',
+    'range': 'A2:AZ'
+  }]).then(() => setStatus('Ready'));
+}
+
+/**
   * Apply Brand Safety Controls to the line items in the QA tab
 */
 function applyBrandSafetyControlsConfiguration() {

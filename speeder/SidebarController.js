@@ -27,6 +27,60 @@ function include(filename) {
 }
 
 /**
+ * Refreshes SDF Download task, useful to check if the status is complete before
+ * downloading the SDF file
+ *
+ * params:
+ *  job.tasks: List of SDF Download tasks
+ *
+ * returns: Updates job.tasks directly with the latest version of the tasks
+ */
+function _refreshSDFTasks(job) {
+  var loader = getLoader(job.entity);
+
+  return loader.refreshSDFTasks(job);
+}
+function refreshSDFTasks(job) {
+  return _invoke('_refreshSDFTasks', job);
+}
+
+/**
+ * Creates a SDF Download task in DV360 based on parameters specified by the job
+ *
+ * params:
+ *  job: job passed by the sidebar
+ *
+ * returns: The job object updated with the SDF Download task created in the
+ * job.task field
+ */
+function _sdfLoad(job) {
+  var loader = getLoader(job.entity);
+
+  return loader.load(job);
+}
+function sdfLoad(job) {
+  return _invoke('_sdfLoad', job);
+}
+
+/**
+ * Creates a SDF Download task in DV360 based on parameters specified by the job
+ *
+ * params:
+ *  job: job passed by the sidebar
+ *
+ * returns: The job object updated with the SDF Download task created in the
+ * job.task field
+ */
+function _createSDFTasks(job) {
+  var loader = getLoader(job.entity);
+
+  return loader.createSDFTasks(job);
+}
+function createSDFTasks(job) {
+  return _invoke('_createSDFTasks', job);
+}
+
+/**
  * Identify items to load from DV360
  *
  * params:
