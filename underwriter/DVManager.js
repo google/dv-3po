@@ -42,7 +42,7 @@ var DVManager = function() {
         'budget': Number(data[i]),
         'startDate': new Date(data[i + 1]),
         'endDate': new Date(data[i + 2]),
-        'ioId': io['Io Id']
+        'ioId': io[constants.IO_ID_SDF]
       });
     }
 
@@ -62,8 +62,9 @@ var DVManager = function() {
    */
   function augmentIOs(ios, ioAdvMap) {
     each(ios, function(io, index) {
-      io['Parsed Segments'] = parseBudgetSegments(io['Budget Segments'], io);
-      io['Advertiser ID'] = ioAdvMap[io['Io Id']];
+      io[constants.PARSED_SEGMENTS_FIELD] =
+          parseBudgetSegments(io[constants.BUDGET_SEGMENTS_SDF], io);
+      io[constants.ADVERTISER_ID_SDF] = ioAdvMap[io[constants.IO_ID_SDF]];
     });
 
     return ios;
@@ -74,7 +75,7 @@ var DVManager = function() {
     var ios = [];
 
     if(campaignId) {
-      filter = 'campaignId=' + campaignId;
+      filter = `${constants.CAMPAIGN_ID_API}=${campaignId}`;
     }
 
     var page = dao.listInsertionOrders(advertiserId, filter);
@@ -95,11 +96,11 @@ var DVManager = function() {
 
   function createSDFDownloadTask(advertiserId, ios) {
     var idFilter = {
-      "insertionOrderIds": []
+      'insertionOrderIds': []
     }
 
     each(ios, function(io, index) {
-      idFilter["insertionOrderIds"].push(io.insertionOrderId);
+      idFilter[constants.IO_IDS_API].push(io.insertionOrderId);
     });
 
     return dao.createSDFDownloadTask(advertiserId, idFilter);
@@ -176,21 +177,6 @@ var DVManager = function() {
     });
 
     return augmentIOs(downloadSDFs(sdfDownloadTasks), ioAdvMap);
-  }
-
-  this.getMockSDF = function() {
-    var testTasks = [{ name: 'sdfdownloadtasks/operations/6371986',
-    metadata:
-     { '@type': 'type.googleapis.com/google.ads.displayvideo.v1.SdfDownloadTaskMetadata',
-       createTime: '2020-10-19T16:49:02.126Z',
-       endTime: '2020-10-19T16:49:41.036Z',
-       version: 'SDF_VERSION_5_2' },
-    done: true,
-    response:
-     { '@type': 'type.googleapis.com/google.ads.displayvideo.v1.SdfDownloadTask',
-       resourceName: 'sdfdownloadtasks/media/6371986' } }]
-
-    return downloadSDFs(testTasks);
   }
 
   this.getAdvertiserTimezone = function(advertiserId) {

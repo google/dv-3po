@@ -36,35 +36,7 @@ var Underwriter = function() {
    * and end date fields.
    */
   function readFeed() {
-    var feed = getSheetDAO().sheetToDict('Underwriter');
-    var result = {};
-
-    each(feed, function(feedItem, index) {
-      var item = null;
-
-      if(!result[feedItem['Advertiser ID']]) {
-        item = {
-          feed: [],
-          ios: []
-        };
-
-        result[feedItem['Advertiser ID']] = item;
-      } else {
-        item = result[feedItem['Advertiser ID']];
-      }
-
-      if(!item.earliestStartDate ||
-          item.earliestStartDate >
-            feedItem['Credit Start Date']) {
-        item.earliestStartDate =
-            feedItem['Credit Start Date'];
-      }
-
-      item.feed.push(feedItem);
-
-    });
-
-    return result;
+    return getSheetDAO().sheetToDict(constants.UNDERWRITER_TAB);
   }
 
   /**
@@ -113,54 +85,77 @@ var Underwriter = function() {
    *
    */
   function prepareData(feed) {
-    var advertiserIds = Object.getOwnPropertyNames(feed);
+    var earliestStartDate = {};
+    var advertiserIds = [];
     var filters = [];
-    var result = [];
+    var unmatchedSegments = [];
 
-    each(advertiserIds, function(advertiserId, index) {
-      filters.push({
-        'advertiserId': advertiserId
+    feed.forEach(feedItem => {
+      var ids = typeof(feedItem[constants.ADVERTISER_ID_HEADER]) == 'string' ?
+          feedItem[constants.ADVERTISER_ID_HEADER].split(',') : [feedItem[constants.ADVERTISER_ID_HEADER]]
+
+      ids.forEach(advertiserId => {
+        advertiserId = Number(advertiserId);
+
+        if(earliestStartDate[advertiserId] ||
+            earliestStartDate[advertiserId] > feedItem[constants.CREDIT_START_DATE]) {
+          earliestStartDate[advertiserId] = feedItem[constants.CREDIT_START_DATE_HEADER];
+        }
+
+        if(advertiserIds.indexOf(advertiserId) == -1) {
+          advertiserIds.push(advertiserId)
+        }
       });
     });
 
-    each(getDVManager().sdfGetIOs(filters), function(io, index) {
-      var add = false;
+    if(advertiserIds.length == 0) {
+      return;
+    }
 
-      each(io['Parsed Segments'], function(segment, index) {
+    advertiserIds.forEach(advertiserId => {
+      filters.push({'advertiserId': advertiserId});
+    });
 
-        if(segment['endDate'] >= feed[io['Advertiser ID']].earliestStartDate) {
-          var matched = false;
-          var advertiserTimezone = getDVManager().
-              getAdvertiserTimezone(io['Advertiser ID']);
+    getDVManager().sdfGetIOs(filters).forEach(io => {
+      var advertiserTimezone = getDVManager().
+          getAdvertiserTimezone(io[constants.ADVERTISER_ID_HEADER]);
 
-          each(feed[io['Advertiser ID']].feed, function(feedItem, index) {
-            if(matched) {
-              return;
-            }
+      io[constants.PARSED_SEGMENTS_FIELD].forEach(segment => {
+        // Ignore segments before earliest start date
+        if(earliestStartDate[io[constants.ADVERTISER_ID_HEADER]] > segment[constants.END_DATE_API]) {
+          return;
+        }
 
-            if(between([segment['startDate'], segment['endDate']],
-                  feedItem['Credit Start Date'], feedItem['Credit End Date'],
+        var matched = false;
+
+        feed.forEach(feedItem => {
+          var ids = typeof(feedItem[constants.ADVERTISER_ID_HEADER]) == 'string' ?
+              feedItem[constants.ADVERTISER_ID_HEADER].split(',') : [Number(feedItem[constants.ADVERTISER_ID_HEADER])];
+
+          if(ids.indexOf(io[constants.ADVERTISER_ID_HEADER]) != -1) {
+            if(between([segment[constants.START_DATE_API], segment[constants.END_DATE_API]],
+                  feedItem[constants.CREDIT_START_DATE_HEADER], feedItem[constants.CREDIT_END_DATE_HEADER],
                   advertiserTimezone, true)) {
               matched = true;
 
               if(!feedItem.segments) {
                 feedItem.segments = [];
+                feedItem.totalBudget = 0;
               }
 
               feedItem.segments.push(segment);
+              feedItem.totalBudget += segment[constants.BUDGET_API];
             }
-          });
-
-          if(!matched) {
-            if(!feed.unmatched) {
-              feed.unmatched = [];
-            }
-
-            feed.unmatched.push(segment);
           }
+        });
+
+        if(!matched) {
+          unmatchedSegments.push(segment);
         }
       });
     });
+
+    return unmatchedSegments;
   }
 
   /**
@@ -171,16 +166,14 @@ var Underwriter = function() {
    *
    * returns: array of strings representing error messages
    */
-  function verifyDateRanges(validationData) {
+  function verifyDateRanges(unmatchedSegments) {
     var result = [];
 
-    if(validationData.unmatched) {
-      each(validationData.unmatched, function(segment, index) {
-        result.push(["ERROR", "IO " + segment.ioId + " has a budget segment out of " +
-            " bounds: " + formatDate(segment['startDate']) + " to " + formatDate(segment['endDate']) +
-            " $" + segment['budget']]);
-      });
-    }
+    unmatchedSegments.forEach(segment => {
+      result.push(["ERROR", "IO " + segment.ioId + " has a budget segment out of " +
+          " bounds: " + formatDate(segment[constants.START_DATE_API]) + " to " + formatDate(segment[constants.END_DATE_API]) +
+          " $" + segment[constants.BUDGET_API]]);
+    });
 
     return result;
   }
@@ -202,7 +195,7 @@ var Underwriter = function() {
       date = new Date(date);
     }
 
-    return Utilities.formatDate(date, timeZone, 'yyyy-MM-dd');
+    return Utilities.formatDate(date, timeZone, constants.DATE_FORMAT);
   }
 
   /**
@@ -216,26 +209,16 @@ var Underwriter = function() {
   function verifyBudgets(validationData) {
     var result = [];
 
-    each(Object.getOwnPropertyNames(validationData), function(advertiserId, index) {
-      each(validationData[advertiserId].feed, function(feedItem, index) {
-        var budget = 0;
-
-        if(feedItem.segments) {
-          each(feedItem.segments, function(segment, index) {
-            budget += segment.budget;
-          });
-        }
-
-        if(budget > feedItem['Credit']) {
-          result.push(['ERROR',
-              'Scheduled budget exceeds credit limit for advertiser ' +
-              feedItem['Advertiser ID'] + ' on credit period from ' +
-              formatDate(feedItem['Credit Start Date']) +  ' to ' +
-              formatDate(feedItem['Credit End Date']) +
-              ' credit: $' + feedItem['Credit'].toFixed(2) + ' scheduled budget: $' +
-              budget.toFixed(2)]);
-        }
-      });
+    validationData.forEach(feedItem => {
+      if(feedItem.totalBudget > feedItem[constants.CREDIT_HEADER]) {
+        result.push([constants.LOG_LEVEL_ERROR,
+            'Scheduled budget exceeds credit limit for advertiser ' +
+            feedItem[constants.ADVERTISER_ID_HEADER] + ' on credit period from ' +
+            formatDate(feedItem[constants.CREDIT_START_DATE_HEADER]) +  ' to ' +
+            formatDate(feedItem[constants.CREDIT_END_DATE_HEADER]) +
+            ' credit: $' + feedItem[constants.CREDIT_HEADER].toFixed(2) + ' scheduled budget: $' +
+            feedItem.totalBudget.toFixed(2)]);
+      }
     });
 
     return result;
@@ -245,16 +228,17 @@ var Underwriter = function() {
    * Main entry point for performing underwriter validations
    */
   this.validate = function() {
-    getSheetDAO().goToTab('Validation');
-    getSheetDAO().clear('Validation', "A1:B");
+    getSheetDAO().goToTab(constants.VALIDATION_TAB);
+    getSheetDAO().clear(constants.VALIDATION_TAB, constants.VALIDATION_TAB_RANGE);
 
     var feed = readFeed();
 
-    prepareData(feed);
+    var unmatchedSegments = prepareData(feed);
 
     var logMessages = [];
 
-    var dateErrors = verifyDateRanges(feed);
+    var dateErrors = verifyDateRanges(unmatchedSegments);
+
     var budgetErrors = verifyBudgets(feed);
 
     logMessages = logMessages.concat(dateErrors);
@@ -262,11 +246,12 @@ var Underwriter = function() {
 
     logMessages = [
         ['', 'Executed on: ' + new Date()],
-        ['SUMMARY', dateErrors.length + " date errors, and " + budgetErrors.length + " budget errors found"]
+        [constants.LOG_LEVEL_SUMMARY, dateErrors.length + " date errors, and " + budgetErrors.length + " budget errors found"]
     ];
 
     logMessages = logMessages.concat(dateErrors).concat(budgetErrors);
 
-    getSheetDAO().setValues('Validation', "A1:B" + logMessages.length, logMessages);
+    getSheetDAO().setValues(constants.VALIDATION_TAB, constants.VALIDATION_TAB_RANGE
+        + logMessages.length, logMessages);
   }
 }

@@ -29,13 +29,27 @@ function getUi() {
   return ui;
 }
 
+/**
+ * onOpen handler to display menu
+ */
 function onOpen(e) {
-  getUi().createMenu('DV-3PO Underwriter')
-      .addItem('Run', 'run')
+  SpreadsheetApp.getUi()
+      .createMenu('DV-3PO Underwriter')
+      .addItem('Open', 'underwriterMenu')
       .addToUi();
 }
 
-function run() {
-  new Underwriter().validate();
-}
+/**
+ * Display sidebar
+ */
+function underwriterMenu() {
+  var html = null;
 
+  var sidebarTemplate = getSheetDAO().getValue('Config', 'B1');
+
+  var html = HtmlService.createTemplateFromFile(sidebarTemplate)
+      .evaluate()
+      .setTitle('DV-3PO Underwter');
+
+  SpreadsheetApp.getUi().showSidebar(html);
+}

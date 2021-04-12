@@ -69,7 +69,6 @@ var constants = {
   "LOAD_FROM_DV360_ERROR": "Failed to load from DV360. Please reprocess the row.",
   // Ranges
   "LOGS_TAB_RANGE": "A2:C",
-  "ERRORS_TAB_RANGE": "A2:C",
   "SDF_VERSION": "SDF_VERSION_5_2",
   "ERRORS_TAB_RANGE": "A2:C",
   // Default sleep in seconds to wait before retrying a retriable error
@@ -81,5 +80,6 @@ var constants = {
       'internal error',
       'user rate limit exceeded',
       'quota exceeded'
-  ]
+  ],
+  "SDF_VERSION": "SDF_VERSION_5_2"
 };

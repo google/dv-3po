@@ -24,11 +24,8 @@
  */
 var DVDAO = function() {
 
-  const BASE_API_URL = "https://displayvideo.googleapis.com/v1";
-  const CONTENT_API_URL = "https://displayvideo.googleapis.com/download/";
-
   function apiCall(urlSuffix, options) {
-    var url = BASE_API_URL + urlSuffix;
+    var url = constants.BASE_API_URL + urlSuffix;
 
     if(!options) {
       options = {};
@@ -42,8 +39,8 @@ var DVDAO = function() {
     options.muteHttpExceptions = true;
     // ----
 
-    options.headers['Authorization'] = "Bearer " + ScriptApp.getOAuthToken();
-    options.headers['Content-Type'] = "application/json";
+    options.headers[constants.AUTHORIZATION_HEADER] = "Bearer " + ScriptApp.getOAuthToken();
+    options.headers[constants.CONTENT_TYPE_HEADER] = constants.CONTENT_TYPE_JSON;
 
     var response = UrlFetchApp.fetch(url, options);
 
@@ -55,34 +52,36 @@ var DVDAO = function() {
   }
 
   this.getLineItem = function(advertiserId, lineItemId) {
-    return apiCall("/advertisers/" + advertiserId + "/lineItems/" + lineItemId);
+    return apiCall(constants.ENDPOINT_ADVERTISER + advertiserId +
+        constants.ENDPOINT_LINE_ITEM + lineItemId);
   }
 
   this.listInsertionOrders = function(advertiserId, filter, pageToken) {
-    var endpoint = "/advertisers/" + advertiserId + "/insertionOrders/";
+    var endpoint = constants.ENDPOINT_ADVERTISER + advertiserId +
+        constants.ENDPOINT_INSERTION_ORDER;
     var separator = "?";
 
     if(filter) {
-      endpoint += separator + "filter=" + filter;
+      endpoint += separator + `${constants.FILTER_API}=` + filter;
 
       separator = '&';
     }
 
     if(pageToken) {
-      endpoint += separator + 'pageToken=' + pageToken;
+      endpoint += separator + `${constants.PAGE_TOKEN_API}=` + pageToken;
     }
 
     return apiCall(endpoint);
   }
 
   this.createSDFDownloadTask = function(advertiserId, idFilter) {
-    var endpoint = "/sdfdownloadtasks/";
+    var endpoint = constants.ENDPOINT_SDF_DOWNLOAD;
 
     return apiCall(endpoint, {
       "method": "post",
       "payload": JSON.stringify(
         {
-          "version": "SDF_VERSION_5_2",
+          "version": constants.SDF_VERSION,
           "advertiserId": advertiserId,
           "idFilter": idFilter
         }
@@ -97,22 +96,17 @@ var DVDAO = function() {
   }
 
   this.downloadSDF = function(task) {
-    //var endpoint = "/" + task.response.resourceName;
-    var endpoint = task.response.resourceName + "?alt=media";
+    var endpoint = task.response.resourceName + constants.ALT_PARAM;
 
-    var url =  CONTENT_API_URL + endpoint;
+    var url =  constants.CONTENT_API_URL + endpoint;
 
     var options = {
       'headers': {
-        'accept': 'application/zip'
+        'accept': constants.CONTENT_TYPE_ZIP
       }
     };
 
-    // For testing only
-    options.muteHttpExceptions = true;
-    // ----
-
-    options.headers['Authorization'] = "Bearer " + ScriptApp.getOAuthToken();
+    options.headers[constants.AUTHORIZATION_HEADER] = "Bearer " + ScriptApp.getOAuthToken();
 
     var response = UrlFetchApp.fetch(url, options);
 
@@ -122,7 +116,7 @@ var DVDAO = function() {
 
     var content = response.getBlob();
 
-    content.setContentType('application/zip');
+    content.setContentType(constants.CONTENT_TYPE_ZIP);
 
     return Utilities.unzip(content);
   }
@@ -137,7 +131,7 @@ var DVDAO = function() {
    *  advertiser object
    */
   this.getAdvertiser = function(advertiserId) {
-    return apiCall("/advertisers/" + advertiserId);
+    return apiCall(constants.ENDPOINT_ADVERTISER + advertiserId);
   }
 
 }
