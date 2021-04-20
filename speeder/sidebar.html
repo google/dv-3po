@@ -27,12 +27,19 @@ function setStatus(status) {
   document.getElementById('status').innerHTML = status;
 }
 
+function changeButtonStatus(buttonId, backgroundColor, disabled) {
+  const button = document.getElementById(buttonId);
+  button.disabled = disabled;
+  button.style.backgroundColor = backgroundColor;
+  button.style.borderColor = backgroundColor;
+}
+
 /**
  * Loads data from DV360 into the sheet
  */
 function loadFromDV() {
   setStatus('Loading line items from DV360...');
-
+  changeButtonStatus('loadFromDV', '#A9A9A9', true,);
   // Clear the Log tab
   getLogger().clear().then(function(result) {
     // Create jobs to be executed
@@ -55,6 +62,7 @@ function loadFromDV() {
   }).then(function(result) {
     // Change status back to Ready
     setStatus('The DV360 information has been loaded successfully!');
+    changeButtonStatus('loadFromDV', '#93c47d', false);
   });
 }
 
@@ -64,6 +72,7 @@ function loadFromDV() {
 function pushToDV360() {
   if(confirm("Are you sure you want to push the changes to DV360?")) {
     setStatus('Pushing to DV360...');
+    changeButtonStatus('pushToDV360', '#A9A9A9', true,);
     // Clear the Log tab
     getLogger().clear().then(function(result) {
       // Create jobs to be executed
@@ -81,6 +90,7 @@ function pushToDV360() {
       console.log(result);
       // Change status
       setStatus('The Brand Safety Controls have been pushed successfully! Please verify them in the UI.');
+      changeButtonStatus('pushToDV360', '#93c47d', false);
       return getLogger().log(result)
     });
   }
@@ -141,7 +151,7 @@ function sdfLoad() {
  * Clears the feed
  */
 function clearFeed() {
-  setStatus('Clearing feed');
+  setStatus('Clearing feed...');
 
   new Runner().run('clear', [{
     'sheetName': 'QA',
@@ -154,14 +164,17 @@ function clearFeed() {
 */
 function applyBrandSafetyControlsConfiguration() {
   setStatus('Applying Brand Safety Controls...');
+  changeButtonStatus('applyBrandSafetyControls', '#A9A9A9', true,);
   google.script.run.withSuccessHandler(successHandler).withFailureHandler(errorHandler).applyBrandSafetyControlsConfiguration();
 }
 
-function successHandler(){
+function successHandler() {
+  changeButtonStatus('applyBrandSafetyControls', '#93c47d', false);
   setStatus('The Brand Safety Controls have been applied successfully! Please validate them before pushing to DV360.');
 }
 
-function errorHandler(param){
+function errorHandler(param) {
+  changeButtonStatus('applyBrandSafetyControls', '#93c47d', false);
   setStatus('There was an error while applying the Brand Safety Controls.');
 }
 

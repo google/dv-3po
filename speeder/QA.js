@@ -1,5 +1,5 @@
 /**
- * Copyright 2019 Google Inc.
+ * Copyright 2021 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 /**
  * This module provides functionality to build various QA reports
  */
-var QA = function() {
+ var QA = function() {
 
   /**
    * Calls the handler function for each line item the hierarchy
@@ -54,7 +54,7 @@ var QA = function() {
       if(insertionOrder) {
         feedItem[constants.ADVERTISER_ID_HEADER] = insertionOrder.advertiserId;
         feedItem[constants.INSERTION_ORDER_ID_HEADER] = insertionOrder.insertionOrderId;
-        feedItem[constants.INSERTION_ORDER_NAME] = insertionOrder.displayName;
+        feedItem[constants.INSERTION_ORDER_NAME_HEADER] = insertionOrder.displayName;
       }
       if(lineItem) {
         feedItem[constants.LINE_ITEM_ID_HEADER] = lineItem.lineItemId;
