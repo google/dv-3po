@@ -151,12 +151,13 @@ function sdfLoad() {
  * Clears the feed
  */
 function clearFeed() {
-  setStatus('Clearing feed...');
-
-  new Runner().run('clear', [{
-    'sheetName': 'QA',
-    'range': 'A2:AZ'
-  }]).then(() => setStatus('Ready'));
+  if(confirm("Are you sure you want to clear the feed?")) {
+    setStatus('Clearing feed...');
+    new Runner().run('clear', [{
+      'sheetName': 'QA',
+      'range': 'A2:AZ'
+    }]).then(() => setStatus('Ready'));
+  }
 }
 
 /**
