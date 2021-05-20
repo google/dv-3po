@@ -33,6 +33,8 @@ var constants = {
   "TARGET_TAB_HEADER": "Target Tab",
   "RUN_AT_HEADER": "Run At",
   "TRIGGER_ID_HEADER": "Trigger ID",
+  "EMAIL_SUBJECT_HEADER": "Email Subject",
+  "EMAIL_BODY_HEADER": "Email Body",
 
   // Internal fields
   "PARSED_SEGMENTS_FIELD": "Parsed Segments",
