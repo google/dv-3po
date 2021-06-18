@@ -158,6 +158,7 @@ var PixelQAService = function(dvDAO) {
 
       feedItem[constants.AD_ID_HEADER] = ad['Ad Id'];
       feedItem[constants.AD_NAME_HEADER] = ad['Name'];
+      feedItem[constants.VIDEO_HEADER] = `https://www.youtube.com/watch?v=${ad['Video Id']}`;
 
       var placementId = ad['DCM Tracking - Placement Id'];
       var adId = ad['DCM Tracking - Ad Id'];

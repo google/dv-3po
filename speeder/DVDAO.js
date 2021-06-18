@@ -50,6 +50,25 @@ var DVDAO = function() {
   }
 
   /**
+   * Formats a date into the required format to be usded for filtering in the
+   * API calls
+   *
+   * params:
+   *  date: Date object with the date to format
+   *
+   * returns: String in the format YYYY-MM-DDTHH:MM:SSZ
+   */
+  this.formatDateFilter = function(date) {
+    if(date) {
+      return Utilities.formatDate(date,
+            'GMT',
+            "YYYY-MM-dd'T'HH:mm:ss'Z'");
+    }
+
+    return null;
+  }
+
+  /**
    * Executes calls to the batch API.
    *
    * params:
@@ -208,6 +227,33 @@ var DVDAO = function() {
   }
 
   /**
+   * Handles API pagination pattern and fetches all items in a list
+   *
+   * params:
+   *  apiUrl: The API url to call
+   *  listFieldName: response field in which list of items should be found
+   *
+   * returns: List of objects returned by the API
+   */
+  function fetchAll(apiUrl, listFieldName) {
+    var result = [];
+
+    var response = apiCall(apiUrl);
+    while(response && response[listFieldName] && response[listFieldName].length > 0) {
+      result = result.concat(response[listFieldName]);
+
+      if(response.nextPageToken) {
+        response = apiCall(apiUrl + '&pageToken=' + response.nextPageToken);
+        checkExecutionTime();
+      } else {
+        response = {};
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Lists all advertisers under a partner
    *
    * params:
@@ -217,28 +263,27 @@ var DVDAO = function() {
    * returns:
    *  List of advertisers in the partner
    */
-  this.listAdvertisers = function(partnerId,
-      fields = ["advertiserId", "name"]) {
+  this.listAdvertisers = function(partnerId, filters,
+      fields = ["partnerId", "advertiserId", "displayName", "generalConfig.timeZone"]) {
 
-    var result = [];
+    filters = filters ? `&filter=${filters}` : '';
 
-    var apiUrl = `/advertisers?partnerId=${partnerId}&fields=advertisers(${fields.join(",")}),nextPageToken`;
+    var apiUrl = `/advertisers?partnerId=${partnerId}${filters}&fields=advertisers(${fields.join(",")}),nextPageToken`;
 
-    var response = apiCall(apiUrl);
+    return fetchAll(apiUrl, 'advertisers');
+  }
 
-    // TODO: Make the process of fetching all pages optional, and in a
-    // centralized place
-    while(response && response.advertisers && response.advertisers.length > 0) {
-      result = result.concat(response.advertisers);
-
-      if(response.nextPageToken) {
-        response = apiCall(apiUrl + '&pageToken=' + response.nextPageToken);
-      } else {
-        response = {};
-      }
-    }
-
-    return result;
+  /**
+   * Fetches a particular advertiser by id
+   *
+   * params:
+   *  advertierId: the advertiser id
+   *
+   * returns:
+   *  the advertiser object
+   */
+  this.getAdvertiser = function(advertiserId) {
+    return apiCall("/advertisers/" + advertiserId);
   }
 
   /**
@@ -274,19 +319,7 @@ var DVDAO = function() {
     + "&fields=lineItems(" + fields.join(",") + "),nextPageToken";
     var response = apiCall(apiUrl);
 
-    // TODO: Make the process of fetching all pages optional, and in a
-    // centralized place
-    while(response && response.lineItems && response.lineItems.length > 0) {
-      result = result.concat(response.lineItems);
-
-      if(response.nextPageToken) {
-        response = apiCall(apiUrl + '&pageToken=' + response.nextPageToken);
-      } else {
-        response = {};
-      }
-    }
-
-    return result;
+    return fetchAll(apiUrl, 'lineItems');
   }
 
   /**
@@ -299,27 +332,16 @@ var DVDAO = function() {
    * returns:
    *  List of Insertion Orders
    */
-  this.listInsertionOrders = function(advertiserId, insertionOrderId,
+  this.listInsertionOrders = function(advertiserId, filters,
       fields = ["insertionOrderId", "name", "advertiserId", "budget"]) {
 
-    var result = [];
-    var apiUrl = `/advertisers/${advertiserId}/insertionOrders?fields=insertionOrders(${fields.join(",")}),nextPageToken`;
+    filters = filters ? `&filter=${filters}` : '';
+
+    var apiUrl = `/advertisers/${advertiserId}/insertionOrders?fields=insertionOrders(${fields.join(",")}),nextPageToken${filters}`;
 
     var response = apiCall(apiUrl);
 
-    // TODO: Make the process of fetching all pages optional, and in a
-    // centralized place
-    while(response && response.insertionOrders && response.insertionOrders.length > 0) {
-      result = result.concat(response.insertionOrders);
-
-      if(response.nextPageToken) {
-        response = apiCall(apiUrl + '&pageToken=' + response.nextPageToken);
-      } else {
-        response = {};
-      }
-    }
-
-    return result;
+    return fetchAll(apiUrl, 'insertionOrders');
   }
 
   /**

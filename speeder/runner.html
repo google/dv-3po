@@ -129,10 +129,8 @@ var Runner = function() {
     // in a "message" field. We'll keep this logic here for now to ensure
     // backward compatibility, but it can be removed in future releases
     if(typeof(input) == 'object') {
-      console.log("error type is object");
       job = JSON.parse(input.message);
     } else if(typeof(input) == 'string'){
-      console.log("error type is string");
       job = JSON.parse(input);
     } else {
       throw "Could not parse job error returned from backend"

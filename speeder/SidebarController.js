@@ -253,6 +253,56 @@ function scheduleReportTriggers(job) {
 }
 
 /**
+ * Sets up the underwriter triggers
+ *
+ * params: job, empty object
+ *
+ * returns: job
+ */
+function _setupUnderwriterTriggers(job) {
+  doSetupUnderwriterTriggers();
+
+  return job;
+}
+function setupUnderwriterTriggers(job) {
+  return _invoke('_setupUnderwriterTriggers', job);
+}
+
+/**
+ * Configures the sheet to trigger a full advertiser and budget segment reload
+ * on the next Underwriter execution
+ *
+ * params: job, empty object
+ *
+ * returns: job
+ */
+function _setupFullReload(job) {
+  PropertiesService.getDocumentProperties().setProperty(constants.FULL_RELOAD_PROP,
+      true);
+
+  return job;
+}
+function setupFullReload(job) {
+  return _invoke('_setupFullReload', job);
+}
+
+/**
+ * Deletes all project triggers
+ *
+ * params: job, empty object
+ *
+ * returns: job
+ */
+function _deleteAllTriggers(job) {
+  deleteTriggers();
+
+  return job;
+}
+function deleteAllTriggers(job) {
+  return _invoke('_deleteAllTriggers', job);
+}
+
+/**
  * Function that safely tries to parse an input as a JSON object, if it fails it
  * doesn't throw an excaption, rather it just returns the input
  *

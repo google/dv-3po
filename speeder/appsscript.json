@@ -20,7 +20,8 @@
     "https://www.googleapis.com/auth/script.container.ui",
     "https://www.googleapis.com/auth/dfareporting",
     "https://www.googleapis.com/auth/dfatrafficking",
-    "https://www.googleapis.com/auth/doubleclickbidmanager"
+    "https://www.googleapis.com/auth/doubleclickbidmanager",
+    "https://www.googleapis.com/auth/script.send_mail"
   ],
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8"

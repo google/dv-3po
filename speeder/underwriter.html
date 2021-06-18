@@ -34,18 +34,51 @@
   <br />
   <b class="statusLabel">Status:</b> <span id='status'>Ready</span>
   <br />
-  <button id='loadFromDV' onclick='underwriter()'>Validate</button>
   <br />
-  <button id='loadReports' onclick='loadReports()'>Load Reports</button>
+  <hr />
+  Manual Operations:
   <br />
-  <button id='scheduleReportTriggers' onclick='scheduleReportTriggers()'>
-    Schedule Report Pulls
+  <button id='loadAdvertisers' onclick='loadAdvertisers()'>
+    Load Advertisers
+  </button>
+  <button id='loadBudgetSegments' onclick='loadBudgetSegments()'>
+    Load Budget Segments
   </button>
   <br />
-  <span class='note'>
-    * if you make changes to the Reports tab you must reschedule pulls
+  <button id='loadReports' onclick='loadReports()'>Load Reports</button>
+  <button id='loadFromDV' onclick='underwriter()'>Validate</button>
+  <br />
+  <button id='forceReload' onclick='forceReload()'>
+    Force Advertiser Reload
+  </button>
+  <br />
+  <span class="note">
+    * Click this after changing the Underwriter tab
   </span>
   <br />
+  <br />
+  <hr>
+  Automated Execution:
+  <br />
+  <button id='startUnderwirter' onclick='setupUnderwriterTriggers()'>
+    Start Underwirter
+  </button>
+  <br />
+  <span class="note">
+    * Runs every 5 minutes
+  </span>
+  <br />
+  <button id='scheduleReportTriggers' onclick='scheduleReportTriggers()'>
+    Start Report Pulls
+  </button>
+  <br />
+  <span class="note">
+    * Runs daily
+  </span>
+  <br />
+  <button id='stopUnderwriter' onclick='deleteAllTriggers()'>
+    Stop All Automation
+  </button>
   <br />
   <?!= include('runner'); ?>
   <?!= include('sidebar'); ?>

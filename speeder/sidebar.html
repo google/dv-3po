@@ -161,6 +161,20 @@ function clearFeed() {
 }
 
 /**
+ * Checks for errors in the jobs list, throws exception if one is found
+ *
+ * params: jobs, list of jobs to check
+ *
+ */
+function checkErrors(jobs) {
+  jobs.forEach(job => {
+    if(job.status == 'ERROR') {
+      throw job.error;
+    }
+  });
+}
+
+/**
   * Apply Brand Safety Controls to the line items in the QA tab
 */
 function applyBrandSafetyControlsConfiguration() {
@@ -183,7 +197,7 @@ function errorHandler(param) {
  * Executes the underwriter budget and date validation
  */
 function underwriter() {
-  setStatus('Reading underwriter segments');
+  setStatus('Reading underwriter segments ...');
 
   var jobs = [{
     'entity': 'Underwriter'
@@ -191,13 +205,13 @@ function underwriter() {
 
   new Runner().run('load', jobs)
     .then(jobs => {
+      checkErrors(jobs);
       console.log(jobs);
       setStatus('Ready');
     }).catch(error => {
       console.log(error);
-      setStatus('An Error happened!');
+      setStatus(`An Error happened! ${error}`);
     });
-
 }
 
 /**
@@ -217,6 +231,7 @@ function loadReports() {
 
     return new Runner().run('load', loadJobs);
   }).then(jobs => {
+    checkErrors(jobs);
     setStatus('Ready');
   }).catch(error => {
     console.log(error);
@@ -230,19 +245,132 @@ function loadReports() {
  * reports automatically on a daily basis
  */
 function scheduleReportTriggers() {
-  setStatus('Creating Triggers ...');
+  if(confirm("Are you sure you want to schedule daily report pulls for the reports configured in the Report tab?")) {
+    setStatus('Configuring report pulls ...');
 
-  var job = {
-    'entity': 'Reports'
+    var job = {
+      'entity': 'Reports'
+    }
+
+    new Runner().run('scheduleReportTriggers', [job]).then(jobs => {
+      checkErrors(jobs);
+      setStatus('Ready');
+    }).catch(error => {
+      console.log(error);
+      setStatus('An error happened');
+    });
   }
-
-  new Runner().run('scheduleReportTriggers', [job]).then(jobs => {
-    setStatus('Ready');
-  }).catch(error => {
-    console.log(error);
-    setStatus('An error happened');
-  });
 }
 
+/**
+ * Forces Underwriter to reload advertisers and budget segments in the next
+ * scheduled execution
+ */
+function forceReload() {
+  if(confirm("Are you sure you want Underwriter to fully reload advertisers and budget segments on the next scheduled execution?")) {
+
+    setStatus('Preparing full reload ...');
+
+    var job = {
+    }
+
+    new Runner().run('setupFullReload', [job]).then(jobs => {
+      checkErrors(jobs);
+      setStatus('Ready');
+    }).catch(error => {
+      console.log(error);
+      setStatus('An error happened');
+    });
+  }
+}
+
+/**
+ * Loads the Advertiser tab based on data in the Underwriter tab
+ */
+function loadAdvertisers() {
+  if(confirm("Are you sure you want to reload the data in the Advertisers tab?")) {
+
+    setStatus('Loading Advertisers ...');
+
+    var job = {
+      'entity': 'Advertiser',
+      'incremental': false
+    }
+
+    new Runner().run('load', [job]).then(jobs => {
+      checkErrors(jobs);
+      setStatus('Ready');
+    }).catch(error => {
+      console.log(error);
+      setStatus('An error happened');
+    });
+  }
+}
+
+/**
+ * Loads the Budget Segment tab based on data in the Advertiser tab
+ */
+function loadBudgetSegments() {
+  if(confirm("Are you sure you want to reload the data in the Budget Segments tab?")) {
+
+    setStatus('Loading Budget Segments ...');
+
+    var job = {
+      'entity': 'Budget Segment',
+      'incremental': false
+    }
+
+    new Runner().run('load', [job]).then(jobs => {
+      checkErrors(jobs);
+      setStatus('Ready');
+    }).catch(error => {
+      console.log(error);
+      setStatus('An error happened');
+    });
+  }
+}
+
+/**
+ * Sets up underwiter trigers to run every 5 minutes
+ */
+function setupUnderwriterTriggers() {
+  if(confirm("Are you sure you want to setup Underwriter to run every 5 minutes?")) {
+
+    setStatus('Setting up Underwriter triggers ...');
+
+    var job = {
+      'entity': 'Advertiser'
+    }
+
+    new Runner().run('setupUnderwriterTriggers', [job]).then(jobs => {
+      checkErrors(jobs);
+      setStatus('Ready');
+    }).catch(error => {
+      console.log(error);
+      setStatus('An error happened');
+    });
+  }
+}
+
+/**
+ * Deletes all scheduled project triggers
+ */
+function deleteAllTriggers() {
+  if(confirm("Are you sure you want to stop Underwriter and report pulls?")) {
+
+    setStatus('Deleting triggers ...');
+
+    var job = {
+    }
+
+    new Runner().run('deleteAllTriggers', [job]).then(jobs => {
+      checkErrors(jobs);
+      setStatus('Ready');
+    }).catch(error => {
+      console.log(error);
+      setStatus('An error happened');
+    });
+  }
+}
 
 </script>

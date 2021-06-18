@@ -19,7 +19,6 @@
 *
 ***************************************************************************/
 
-
 /**
  * Function set up as trigger for pulling reports from DV360 on a schedule
  */
@@ -48,20 +47,6 @@ function pullReportTrigger(event) {
  */
 var ReportsService = function(dvDAO) {
   BaseService.call(this, dvDAO);
-
-  /**
-   * Deletes all triggers with a given handler function name
-   *
-   * params: handlerFunctionName: String with the name of the handler function
-   */
-  function deleteTriggers(handlerFunctionName) {
-    ScriptApp.getProjectTriggers().forEach(trigger => {
-      PropertiesService.getDocumentProperties()
-          .deleteProperty(trigger.getUniqueId());
-
-      ScriptApp.deleteTrigger(trigger);
-    });
-  }
 
   /**
    * Reads the feed and identify items to be loaded and creates jobs to be

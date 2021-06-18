@@ -29,6 +29,24 @@ var BaseService = function(dvDAO) {
   this.dvdao = getDVDAO();
 
   /**
+   * Adds an item to the list if it is not already there
+   *
+   * params:
+   *  list: array to which items should be added
+   *  value: value to add
+   *
+   * returns: list
+   *
+   */
+  this.addUnique = function(list, value) {
+    if(list.indexOf(value) == -1) {
+      list.push(value);
+    }
+
+    return list;
+  }
+
+  /**
    * Creates push jobs based on data in the tab of the respective entity
    *
    * params:

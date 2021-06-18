@@ -121,3 +121,64 @@ function _retry(fn, retries, sleep) {
     }
   }
 }
+
+/**
+ * Deletes all triggers with a given handler function name
+ *
+ * params: handlerFunctionName: String with the name of the handler function
+ */
+function deleteTriggers(handlerFunctionName) {
+  ScriptApp.getProjectTriggers().forEach(trigger => {
+    if(!handlerFunctionName || trigger.getHandlerFunction() === handlerFunctionName) {
+      PropertiesService.getDocumentProperties()
+          .deleteProperty(trigger.getUniqueId());
+
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+}
+
+/**
+ * Invokes a function and handles errors by sending out email notifications to
+ * Underwriter admin if exceptions are raised.
+ *
+ * params: func the function to invoke, must take no parameters
+ */
+function errorHandlerInvoke(func, _finally) {
+  try {
+    func();
+  } catch(error) {
+    var adminEmail = getSheetDAO().getValue(constants.CONFIG_TAB,
+        constants.ADMIN_EMAIL_RANGE);
+
+    if(adminEmail) {
+      new EmailService().sendEmail('Underwriter', null, {
+        'underwriter': [error]
+      }, adminEmail);
+    }
+  } finally {
+    if(_finally) {
+      _finally();
+    }
+  }
+}
+
+// Holds start time for execution to be used to check if the execution time is
+// in danger of being exceeded
+var executionStart = null;
+
+/**
+ * Check if the execution time is in danger of being exceeded. The first time
+ * this function is called it will record the time as the start of the
+ * execution. In subsequent calls if the current time - start time >
+ * constants.MAX_EXECUTION_TIME, it will throw an exception.
+ */
+function checkExecutionTime() {
+  if(!executionStart) {
+    executionStart = new Date();
+  } else {
+    if((new Date() - executionStart) / 1000 > constants.MAX_EXECUTION_TIME) {
+      throw 'Maximun execution time exceeded';
+    }
+  }
+}
