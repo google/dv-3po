@@ -180,5 +180,7 @@ var constants = {
   "CONTENT_TYPE_ZIP": "application/zip",
 
   // Execution time
-  "MAX_EXECUTION_TIME": 270
+  "MAX_EXECUTION_TIME": 270,
+  "DEFAULT_SLEEP": 8 * 1000,
+  "DEFAULT_RETRIES": 4
 };

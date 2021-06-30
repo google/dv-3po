@@ -25,28 +25,30 @@
 var DVDAO = function() {
 
   function apiCall(urlSuffix, options, baseApiUrl=constants.BASE_API_URL) {
-    var url = baseApiUrl + urlSuffix;
+    return _retry(function() {
+      var url = baseApiUrl + urlSuffix;
 
-    if(!options) {
-      options = {};
-    }
+      if(!options) {
+        options = {};
+      }
 
-    if(!options.headers) {
-      options.headers = {};
-    }
+      if(!options.headers) {
+        options.headers = {};
+      }
 
-    options.muteHttpExceptions = true;
+      options.muteHttpExceptions = true;
 
-    options.headers[constants.AUTHORIZATION_HEADER] = "Bearer " + ScriptApp.getOAuthToken();
-    options.headers[constants.CONTENT_TYPE_HEADER] = constants.CONTENT_TYPE_JSON;
+      options.headers[constants.AUTHORIZATION_HEADER] = "Bearer " + ScriptApp.getOAuthToken();
+      options.headers[constants.CONTENT_TYPE_HEADER] = constants.CONTENT_TYPE_JSON;
 
-    var response = UrlFetchApp.fetch(url, options);
+      var response = UrlFetchApp.fetch(url, options);
 
-    if(response.getResponseCode() != 200) {
-      throw "Error fetching report " + response.getContentText();
-    }
+      if(response.getResponseCode() != 200) {
+        throw "Error fetching report " + response.getContentText();
+      }
 
-    return JSON.parse(response.getContentText());
+      return JSON.parse(response.getContentText());
+    }, constants.DEFAULT_RETRIES, constants.DEFAULT_SLEEP);
   }
 
   /**
